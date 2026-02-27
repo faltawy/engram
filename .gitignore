@@ -6,6 +6,7 @@ dist/
 *.db-shm
 .env
 bun.lock
+example/
 CLAUDE.md
 .claude
 *.bun-build
