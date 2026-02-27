@@ -14,10 +14,10 @@ Requires [Bun](https://bun.sh) v1.0+.
 
 ```bash
 # Run directly (no install)
-bunx @falta/engram
+bunx @cogmem/engram
 
 # Or install globally
-bun install -g @falta/engram
+bun install -g @cogmem/engram
 engram --help
 ```
 
@@ -167,7 +167,7 @@ Add to your MCP client configuration (e.g., Claude Code `settings.json`):
   "mcpServers": {
     "engram": {
       "command": "bunx",
-      "args": ["@falta/engram-mcp"]
+      "args": ["@cogmem/engram-mcp"]
     }
   }
 }

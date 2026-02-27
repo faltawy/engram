@@ -1,5 +1,5 @@
 {
-  "name": "@falta/engram",
+  "name": "@cogmem/engram",
   "version": "0.0.0",
   "description": "Human memory for artificial minds — a cognitive memory system modeled on neuroscience",
   "type": "module",
@@ -62,6 +62,9 @@
     "bun",
     "neuroscience"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "license": "MIT",
   "engines": {
     "bun": ">=1.0.0"
