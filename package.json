@@ -8,6 +8,7 @@
     "engram": "./src/cli/index.ts"
   },
   "scripts": {
+    "build": "bun run build.ts",
     "start": "bun run src/cli/index.ts",
     "test": "bun test",
     "mcp": "bun run src/mcp/server.ts",
