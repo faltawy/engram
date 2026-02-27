@@ -167,7 +167,7 @@ Add to your MCP client configuration (e.g., Claude Code `settings.json`):
   "mcpServers": {
     "engram": {
       "command": "bunx",
-      "args": ["@cogmem/engram-mcp"]
+      "args": ["-p", "@cogmem/engram", "engram-mcp"]
     }
   }
 }
