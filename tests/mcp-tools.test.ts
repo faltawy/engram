@@ -28,12 +28,8 @@ describe("memory_store", () => {
 
     expect(result.isError).toBeUndefined();
     const data = parseResult(result);
-    expect(data.content).toBe("TypeScript is great");
-    expect(data.type).toBe("semantic");
-    expect(data.emotion).toBe("joy");
-    expect(data.context).toBe("project:test");
     expect(data.id).toBeDefined();
-    expect(data.activation).toBeGreaterThan(0);
+    expect(Object.keys(data)).toEqual(["id"]);
 
     engine.close();
   });
@@ -82,9 +78,9 @@ describe("memory_store", () => {
     });
     const data = parseResult(result);
 
+    expect(data.id).toBeDefined();
     expect(data.context).toContain("incident-resolved");
     expect(data.reconsolidationCount).toBe(1);
-    expect(data.emotion).toBe("satisfaction");
 
     engine.close();
     reconEngine.close();
@@ -263,6 +259,156 @@ describe("memory_manage", () => {
     expect(data.factsExtracted).toBeDefined();
     expect(data.associationsDiscovered).toBeDefined();
     expect(data.chunksFormed).toBeDefined();
+
+    engine.close();
+  });
+
+  test("recall_to_focus loads recalled memories into working memory", () => {
+    const engine = makeEngine();
+    handleStore(engine, { action: "encode", content: "important architecture decision" });
+
+    const result = handleManage(engine, { action: "recall_to_focus", cue: "architecture" });
+    const data = parseResult(result);
+    expect(data.loaded.length).toBeGreaterThan(0);
+    expect(data.focus.used).toBe(data.loaded.length);
+    expect(data.focus.capacity).toBe(7);
+
+    engine.close();
+  });
+});
+
+describe("encode_batch", () => {
+  test("stores multiple memories and returns IDs", () => {
+    const engine = makeEngine();
+    const result = handleStore(engine, {
+      action: "encode_batch",
+      memories: [
+        { content: "fact one" },
+        { content: "fact two", type: "episodic" },
+        { content: "fact three", emotion: "curiosity", context: "project:test" },
+      ],
+    });
+    const data = parseResult(result);
+    expect(data.stored).toHaveLength(3);
+    expect(data.errors).toBeUndefined();
+    expect(data.stored[0]).toMatch(/^sem:/);
+    expect(data.stored[1]).toMatch(/^epi:/);
+
+    engine.close();
+  });
+
+  test("reports partial failures", () => {
+    const engine = makeEngine();
+    const result = handleStore(engine, {
+      action: "encode_batch",
+      memories: [
+        { content: "valid memory" },
+        { content: "bad type", type: "invalid" as any },
+      ],
+    });
+    const data = parseResult(result);
+    expect(data.stored).toHaveLength(1);
+    expect(data.errors).toHaveLength(1);
+    expect(data.errors[0]).toContain("Invalid type");
+
+    engine.close();
+  });
+});
+
+describe("list action", () => {
+  test("returns memories without activation effects", () => {
+    const engine = makeEngine();
+    handleStore(engine, { action: "encode", content: "alpha fact" });
+    handleStore(engine, { action: "encode", content: "beta fact" });
+
+    const result = handleRecall(engine, { action: "list" });
+    const data = parseResult(result);
+    expect(data).toHaveLength(2);
+    expect(data[0]).toHaveProperty("id");
+    expect(data[0]).toHaveProperty("content");
+    expect(data[0]).toHaveProperty("type");
+
+    engine.close();
+  });
+
+  test("supports offset and limit", () => {
+    const engine = makeEngine();
+    for (let i = 0; i < 5; i++) {
+      handleStore(engine, { action: "encode", content: `memory ${i}` });
+    }
+    const result = handleRecall(engine, { action: "list", limit: 2, offset: 1 });
+    const data = parseResult(result);
+    expect(data).toHaveLength(2);
+
+    engine.close();
+  });
+
+  test("format ids returns only IDs", () => {
+    const engine = makeEngine();
+    handleStore(engine, { action: "encode", content: "test content" });
+
+    const result = handleRecall(engine, { action: "list", format: "ids" });
+    const data = parseResult(result);
+    expect(typeof data[0]).toBe("string");
+    expect(data[0]).toMatch(/^sem:/);
+
+    engine.close();
+  });
+
+  test("format content returns only content strings", () => {
+    const engine = makeEngine();
+    handleStore(engine, { action: "encode", content: "test content" });
+
+    const result = handleRecall(engine, { action: "list", format: "content" });
+    const data = parseResult(result);
+    expect(data[0]).toBe("test content");
+
+    engine.close();
+  });
+});
+
+describe("recall format param", () => {
+  test("format content returns flat content array", () => {
+    const engine = makeEngine();
+    handleStore(engine, { action: "encode", content: "recall me" });
+
+    const result = handleRecall(engine, { action: "recall", cue: "recall", format: "content" });
+    const data = parseResult(result);
+    expect(data[0]).toBe("recall me");
+
+    engine.close();
+  });
+
+  test("format ids returns flat ID array", () => {
+    const engine = makeEngine();
+    handleStore(engine, { action: "encode", content: "recall me too" });
+
+    const result = handleRecall(engine, { action: "recall", cue: "recall", format: "ids" });
+    const data = parseResult(result);
+    expect(typeof data[0]).toBe("string");
+    expect(data[0]).toMatch(/^sem:/);
+
+    engine.close();
+  });
+});
+
+describe("context filtering fix", () => {
+  test("recall finds context-tagged memories even with unrelated cue", () => {
+    const engine = makeEngine();
+    handleStore(engine, {
+      action: "encode",
+      content: "xyz unique content",
+      context: "project:alpha",
+    });
+
+    const result = handleRecall(engine, {
+      action: "recall",
+      cue: "completely different search",
+      context: "project:alpha",
+    });
+    const data = parseResult(result);
+    expect(data.length).toBeGreaterThanOrEqual(1);
+    expect(data[0].content).toBe("xyz unique content");
 
     engine.close();
   });

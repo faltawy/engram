@@ -1,7 +1,7 @@
 import type { CognitiveConfig } from "../config/defaults.ts";
 import type { EngramStorage } from "../storage/sqlite.ts";
 import type { EngramEngine } from "../core/engine.ts";
-import { isValidMemoryType } from "../core/memory.ts";
+import { isValidMemoryType, MemoryType, Emotion } from "../core/memory.ts";
 import { encode } from "../core/encoder.ts";
 import { recall } from "../core/recall.ts";
 import {
@@ -38,6 +38,8 @@ export function handleStore(
   switch (args.action) {
     case "encode":
       return handleEncode(engine.storage, engine.config, args as any, engine.projectContext);
+    case "encode_batch":
+      return handleEncodeBatch(engine.storage, engine.config, args as any, engine.projectContext);
     case "reconsolidate":
       return handleReconsolidate(engine.storage, engine.config, args as any);
     default:
@@ -55,6 +57,8 @@ export function handleRecall(
       return handleRecallQuery(engine.storage, engine.config, args as any, engine.projectContext);
     case "inspect":
       return handleInspect(engine.storage, args as any);
+    case "list":
+      return handleList(engine.storage, args as any, engine.projectContext);
     case "stats":
       return handleStats(engine.storage, engine.config);
     default:
@@ -77,6 +81,8 @@ export function handleManage(
       return handleFocusGet(engine.storage, engine.config);
     case "focus_clear":
       return handleFocusClear(engine.storage);
+    case "recall_to_focus":
+      return handleRecallToFocus(engine, args as any);
     default:
       return errorResult(`Unknown manage action: ${args.action}`);
   }
@@ -96,12 +102,12 @@ function handleEncode(
 ): ToolResult {
   const typeStr = args.type ?? "semantic";
   if (!isValidMemoryType(typeStr)) {
-    return errorResult(`Invalid type: ${typeStr}. Must be episodic, semantic, or procedural.`);
+    return errorResult(`Invalid type '${typeStr}'. Valid: ${Object.values(MemoryType).join(", ")}`);
   }
 
   const emotionStr = args.emotion ?? "neutral";
   if (!isValidEmotion(emotionStr)) {
-    return errorResult(`Invalid emotion: ${emotionStr}.`);
+    return errorResult(`Invalid emotion '${emotionStr}'. Valid: ${Object.values(Emotion).join(", ")}`);
   }
 
   const memory = encode(
@@ -116,17 +122,58 @@ function handleEncode(
     config,
   );
 
-  return textResult(
-    JSON.stringify({
-      id: memory.id,
-      type: memory.type,
-      content: memory.content,
-      activation: memory.activation,
-      emotion: memory.emotion,
-      emotionWeight: memory.emotionWeight,
-      context: memory.context,
-    }),
-  );
+  return textResult(JSON.stringify({ id: memory.id }));
+}
+
+function handleEncodeBatch(
+  storage: EngramStorage,
+  config: CognitiveConfig,
+  args: {
+    memories: Array<{
+      content: string;
+      type?: string;
+      emotion?: string;
+      emotionWeight?: number;
+      context?: string;
+    }>;
+  },
+  defaultContext?: string | null,
+): ToolResult {
+  const ids: string[] = [];
+  const errors: string[] = [];
+
+  storage.transaction(() => {
+    for (let i = 0; i < args.memories.length; i++) {
+      const m = args.memories[i]!;
+      const typeStr = m.type ?? "semantic";
+      if (!isValidMemoryType(typeStr)) {
+        errors.push(`[${i}] Invalid type '${typeStr}'`);
+        continue;
+      }
+      const emotionStr = m.emotion ?? "neutral";
+      if (!isValidEmotion(emotionStr)) {
+        errors.push(`[${i}] Invalid emotion '${emotionStr}'`);
+        continue;
+      }
+      const memory = encode(
+        storage,
+        {
+          content: m.content,
+          type: typeStr,
+          emotion: emotionStr,
+          emotionWeight: m.emotionWeight,
+          context: m.context ?? defaultContext ?? undefined,
+        },
+        config,
+      );
+      ids.push(memory.id);
+    }
+  });
+
+  if (errors.length > 0) {
+    return textResult(JSON.stringify({ stored: ids, errors }));
+  }
+  return textResult(JSON.stringify({ stored: ids }));
 }
 
 function handleRecallQuery(
@@ -139,6 +186,7 @@ function handleRecallQuery(
     context?: string;
     associative?: boolean;
     verbose?: boolean;
+    format?: "full" | "content" | "ids";
   },
   defaultContext?: string | null,
 ): ToolResult {
@@ -153,6 +201,15 @@ function handleRecallQuery(
 
   if (results.length === 0) {
     return textResult("No memories found above retrieval threshold.");
+  }
+
+  const format = args.format ?? "full";
+
+  if (format === "ids") {
+    return textResult(JSON.stringify(results.map((r) => r.memory.id)));
+  }
+  if (format === "content") {
+    return textResult(JSON.stringify(results.map((r) => r.memory.content)));
   }
 
   const formatted = args.verbose
@@ -176,6 +233,56 @@ function handleRecallQuery(
       }));
 
   return textResult(JSON.stringify(formatted));
+}
+
+function handleList(
+  storage: EngramStorage,
+  args: {
+    type?: string;
+    context?: string;
+    limit?: number;
+    offset?: number;
+    format?: "full" | "content" | "ids";
+  },
+  defaultContext?: string | null,
+): ToolResult {
+  const limit = args.limit ?? 20;
+  const offset = args.offset ?? 0;
+  const typeFilter = args.type && isValidMemoryType(args.type) ? args.type : undefined;
+  const context = args.context ?? defaultContext ?? undefined;
+
+  let results;
+  if (context) {
+    results = storage.getMemoriesByContext(context, typeFilter, limit + offset);
+  } else {
+    results = storage.getAllMemories(typeFilter).slice(0, limit + offset);
+  }
+  results = results.slice(offset, offset + limit);
+
+  if (results.length === 0) {
+    return textResult("No memories found.");
+  }
+
+  const format = args.format ?? "full";
+
+  if (format === "ids") {
+    return textResult(JSON.stringify(results.map((m) => m.id)));
+  }
+  if (format === "content") {
+    return textResult(JSON.stringify(results.map((m) => m.content)));
+  }
+
+  return textResult(
+    JSON.stringify(
+      results.map((m) => ({
+        id: m.id,
+        content: m.content,
+        type: m.type,
+        context: m.context,
+        activation: m.activation,
+      })),
+    ),
+  );
 }
 
 function handleFocusPush(
@@ -220,6 +327,32 @@ function handleFocusGet(storage: EngramStorage, config: CognitiveConfig): ToolRe
 function handleFocusClear(storage: EngramStorage): ToolResult {
   const count = clearFocus(storage);
   return textResult(`Cleared ${count} items from working memory.`);
+}
+
+function handleRecallToFocus(
+  engine: EngramEngine,
+  args: { cue: string; limit?: number; type?: string; context?: string },
+): ToolResult {
+  const typeFilter = args.type && isValidMemoryType(args.type) ? args.type : undefined;
+  const limit = args.limit ?? 3;
+
+  const results = recall(engine.storage, args.cue, engine.config, {
+    limit,
+    type: typeFilter,
+    context: args.context ?? engine.projectContext ?? undefined,
+    associative: true,
+  });
+
+  const loaded: string[] = [];
+  for (const r of results) {
+    pushFocus(engine.storage, r.memory.content, engine.config, {
+      memoryRef: r.memory.id,
+    });
+    loaded.push(r.memory.id);
+  }
+
+  const { used, capacity } = focusUtilization(engine.storage, engine.config);
+  return textResult(JSON.stringify({ loaded, focus: { used, capacity } }));
 }
 
 function handleConsolidate(storage: EngramStorage, config: CognitiveConfig): ToolResult {
@@ -324,9 +457,6 @@ function handleReconsolidate(
   return textResult(
     JSON.stringify({
       id: updated.id,
-      content: updated.content,
-      emotion: updated.emotion,
-      emotionWeight: updated.emotionWeight,
       context: updated.context,
       reconsolidationCount: updated.reconsolidationCount,
     }),

@@ -31,6 +31,13 @@ export function recall(
     candidateMap.set(m.id, m);
   }
 
+  if (options?.context) {
+    const contextMatches = storage.getMemoriesByContext(options.context, options?.type, limit * 2);
+    for (const m of contextMatches) {
+      candidateMap.set(m.id, m);
+    }
+  }
+
   const allCandidates = options?.type
     ? storage.getAllMemories(options.type)
     : storage.getAllMemories();

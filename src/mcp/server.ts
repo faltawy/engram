@@ -17,11 +17,7 @@ server.registerTool(
   "memory_store",
   {
     title: "Store Memory",
-    description: `Store memories. Requires "action" field.
-
-Actions:
-- action:"encode" — Create a new memory. Params: content (required), type? (semantic|episodic|procedural, default semantic), emotion? (neutral|curiosity|surprise|anxiety|satisfaction|frustration|confusion|excitement|calm|urgency), emotionWeight? (0-1), context? (e.g. "project:acme")
-- action:"reconsolidate" — Update an existing memory during recall. Params: id (required), newContext?, currentEmotion?, currentEmotionWeight?`,
+    description: `Actions: encode(content) — store memory | encode_batch(memories[]) — store multiple | reconsolidate(id) — update during recall. Optional: type, emotion, emotionWeight, context.`,
     inputSchema: z.discriminatedUnion("action", [
       z.object({
         action: z.literal("encode"),
@@ -30,6 +26,22 @@ Actions:
         emotion: z.nativeEnum(Emotion).optional().describe("Emotional tag"),
         emotionWeight: z.number().min(0).max(1).optional().describe("Emotion intensity 0-1"),
         context: z.string().optional().describe("Context tag (e.g. project:acme)"),
+      }),
+      z.object({
+        action: z.literal("encode_batch"),
+        memories: z
+          .array(
+            z.object({
+              content: z.string(),
+              type: z.nativeEnum(MemoryType).optional(),
+              emotion: z.nativeEnum(Emotion).optional(),
+              emotionWeight: z.number().min(0).max(1).optional(),
+              context: z.string().optional(),
+            }),
+          )
+          .min(1)
+          .max(50)
+          .describe("Array of memories to encode"),
       }),
       z.object({
         action: z.literal("reconsolidate"),
@@ -47,12 +59,7 @@ server.registerTool(
   "memory_recall",
   {
     title: "Recall Memories",
-    description: `Retrieve memories. Requires "action" field.
-
-Actions:
-- action:"recall" — Cue-based retrieval with spreading activation. Params: cue (required), limit? (default 5), type? (semantic|episodic|procedural), context?, associative? (default true), verbose?
-- action:"inspect" — Examine a specific memory's full lifecycle. Params: id (required, full ID or prefix)
-- action:"stats" — Memory system overview (counts, working memory usage, last consolidation). No extra params.`,
+    description: `Actions: recall(cue) — cue-based retrieval | list — browse without activation effects | inspect(id) — full lifecycle | stats — system overview. Optional: limit, type, context, format, verbose.`,
     inputSchema: z.discriminatedUnion("action", [
       z.object({
         action: z.literal("recall").optional().default("recall"),
@@ -62,10 +69,19 @@ Actions:
         context: z.string().optional().describe("Filter by context"),
         associative: z.boolean().optional().describe("Spreading activation (default: true)"),
         verbose: z.boolean().optional().describe("Full fields"),
+        format: z.enum(["full", "content", "ids"]).optional().describe("Response format (default: full)"),
       }),
       z.object({
         action: z.literal("inspect"),
         id: z.string().describe("Memory ID or prefix"),
+      }),
+      z.object({
+        action: z.literal("list"),
+        type: z.nativeEnum(MemoryType).optional().describe("Filter by type"),
+        context: z.string().optional().describe("Filter by context prefix"),
+        limit: z.number().optional().describe("Max results (default: 20)"),
+        offset: z.number().optional().describe("Skip first N results (default: 0)"),
+        format: z.enum(["full", "content", "ids"]).optional().describe("Response format (default: full)"),
       }),
       z.object({
         action: z.literal("stats"),
@@ -79,14 +95,7 @@ server.registerTool(
   "memory_manage",
   {
     title: "Manage Memory",
-    description: `Memory maintenance. Requires "action" field.
-
-Actions:
-- action:"consolidate" — Run sleep cycle (strengthen, prune, extract patterns, discover links). No extra params.
-- action:"focus_push" — Push to working memory buffer. Params: content (required), memoryRef?
-- action:"focus_pop" — Remove most recent item from working memory. No extra params.
-- action:"focus_get" — View current working memory contents. No extra params.
-- action:"focus_clear" — Clear all working memory. No extra params.`,
+    description: `Actions: consolidate — run sleep cycle | recall_to_focus(cue) — recall and load to working memory | focus_push(content) — push to buffer | focus_pop — pop newest | focus_get — view buffer | focus_clear — empty buffer.`,
     inputSchema: z.discriminatedUnion("action", [
       z.object({
         action: z.literal("consolidate"),
@@ -104,6 +113,13 @@ Actions:
       }),
       z.object({
         action: z.literal("focus_clear"),
+      }),
+      z.object({
+        action: z.literal("recall_to_focus"),
+        cue: z.string().describe("Recall cue"),
+        limit: z.number().optional().describe("Max memories to load (default: 3)"),
+        type: z.nativeEnum(MemoryType).optional().describe("Filter by type"),
+        context: z.string().optional().describe("Filter by context"),
       }),
     ]),
   },
