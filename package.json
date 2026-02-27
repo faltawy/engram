@@ -13,8 +13,8 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "bin": {
-    "engram": "./src/cli/index.ts",
-    "engram-mcp": "./src/mcp/server.ts"
+    "engram": "src/cli/index.ts",
+    "engram-mcp": "src/mcp/server.ts"
   },
   "files": [
     "src/",
