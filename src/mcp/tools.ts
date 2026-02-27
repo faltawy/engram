@@ -82,7 +82,7 @@ export function handleManage(
     case "focus_clear":
       return handleFocusClear(engine.storage);
     case "recall_to_focus":
-      return handleRecallToFocus(engine, args as any);
+      return handleRecallToFocus(engine.storage, engine.config, args as any, engine.projectContext);
     default:
       return errorResult(`Unknown manage action: ${args.action}`);
   }
@@ -330,28 +330,30 @@ function handleFocusClear(storage: EngramStorage): ToolResult {
 }
 
 function handleRecallToFocus(
-  engine: EngramEngine,
+  storage: EngramStorage,
+  config: CognitiveConfig,
   args: { cue: string; limit?: number; type?: string; context?: string },
+  defaultContext?: string | null,
 ): ToolResult {
   const typeFilter = args.type && isValidMemoryType(args.type) ? args.type : undefined;
   const limit = args.limit ?? 3;
 
-  const results = recall(engine.storage, args.cue, engine.config, {
+  const results = recall(storage, args.cue, config, {
     limit,
     type: typeFilter,
-    context: args.context ?? engine.projectContext ?? undefined,
+    context: args.context ?? defaultContext ?? undefined,
     associative: true,
   });
 
   const loaded: string[] = [];
   for (const r of results) {
-    pushFocus(engine.storage, r.memory.content, engine.config, {
+    pushFocus(storage, r.memory.content, config, {
       memoryRef: r.memory.id,
     });
     loaded.push(r.memory.id);
   }
 
-  const { used, capacity } = focusUtilization(engine.storage, engine.config);
+  const { used, capacity } = focusUtilization(storage, config);
   return textResult(JSON.stringify({ loaded, focus: { used, capacity } }));
 }
 
