@@ -17,7 +17,11 @@ server.registerTool(
   "memory_store",
   {
     title: "Store Memory",
-    description: "Write operations: encode a new memory or reconsolidate an existing one.",
+    description: `Store memories. Requires "action" field.
+
+Actions:
+- action:"encode" — Create a new memory. Params: content (required), type? (semantic|episodic|procedural, default semantic), emotion? (neutral|curiosity|surprise|anxiety|satisfaction|frustration|confusion|excitement|calm|urgency), emotionWeight? (0-1), context? (e.g. "project:acme")
+- action:"reconsolidate" — Update an existing memory during recall. Params: id (required), newContext?, currentEmotion?, currentEmotionWeight?`,
     inputSchema: z.discriminatedUnion("action", [
       z.object({
         action: z.literal("encode"),
@@ -43,7 +47,12 @@ server.registerTool(
   "memory_recall",
   {
     title: "Recall Memories",
-    description: "Read operations: cue-based retrieval, inspect a memory, or get system stats.",
+    description: `Retrieve memories. Requires "action" field.
+
+Actions:
+- action:"recall" — Cue-based retrieval with spreading activation. Params: cue (required), limit? (default 5), type? (semantic|episodic|procedural), context?, associative? (default true), verbose?
+- action:"inspect" — Examine a specific memory's full lifecycle. Params: id (required, full ID or prefix)
+- action:"stats" — Memory system overview (counts, working memory usage, last consolidation). No extra params.`,
     inputSchema: z.discriminatedUnion("action", [
       z.object({
         action: z.literal("recall").optional().default("recall"),
@@ -70,7 +79,14 @@ server.registerTool(
   "memory_manage",
   {
     title: "Manage Memory",
-    description: "Maintenance: run consolidation or manage working memory focus buffer.",
+    description: `Memory maintenance. Requires "action" field.
+
+Actions:
+- action:"consolidate" — Run sleep cycle (strengthen, prune, extract patterns, discover links). No extra params.
+- action:"focus_push" — Push to working memory buffer. Params: content (required), memoryRef?
+- action:"focus_pop" — Remove most recent item from working memory. No extra params.
+- action:"focus_get" — View current working memory contents. No extra params.
+- action:"focus_clear" — Clear all working memory. No extra params.`,
     inputSchema: z.discriminatedUnion("action", [
       z.object({
         action: z.literal("consolidate"),

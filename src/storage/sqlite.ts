@@ -178,7 +178,7 @@ export class EngramStorage {
   }
 
   searchFTS(query: string, limit: number = 20): string[] {
-    const sanitized = query.replace(/['"]/g, "").trim();
+    const sanitized = query.replace(/[^a-zA-Z0-9\s]/g, "").trim();
     if (!sanitized) return [];
     const terms = sanitized.split(/\s+/).map((t) => `"${t}"*`).join(" OR ");
     const stmt = this.sqlite.prepare(

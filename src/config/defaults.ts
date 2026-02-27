@@ -19,7 +19,7 @@ export interface CognitiveConfig {
 
 export const DEFAULT_CONFIG: CognitiveConfig = {
   decayRate: 0.5,
-  retrievalThreshold: -1.0,
+  retrievalThreshold: -3.0,
   latencyFactor: 1.0,
   latencyExponent: 1.0,
   activationNoise: 0.25,

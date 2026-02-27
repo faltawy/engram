@@ -79,7 +79,7 @@ describe("DEFAULT_CONFIG", () => {
   test("has sensible defaults", () => {
     expect(DEFAULT_CONFIG.decayRate).toBe(0.5);
     expect(DEFAULT_CONFIG.workingMemoryCapacity).toBe(7);
-    expect(DEFAULT_CONFIG.retrievalThreshold).toBe(-1.0);
+    expect(DEFAULT_CONFIG.retrievalThreshold).toBe(-3.0);
     expect(DEFAULT_CONFIG.pruningThreshold).toBe(-2.0);
     expect(DEFAULT_CONFIG.activationNoise).toBe(0.25);
     expect(DEFAULT_CONFIG.dbPath).toBe("~/.engram/memory.db");
