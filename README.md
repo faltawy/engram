@@ -87,20 +87,6 @@ When you recall a memory, it temporarily becomes unstable and can be modified (N
 
 The amygdala modulates encoding strength. High-arousal emotions (anxiety, surprise) produce stronger memory traces than low-arousal states. Emotional memories decay slower.
 
-## Installation
-
-```bash
-bun add engram
-```
-
-Or clone and install locally:
-
-```bash
-git clone <repo-url>
-cd engram
-bun install
-```
-
 ## CLI Usage
 
 ### Encoding Memories
