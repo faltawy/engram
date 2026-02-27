@@ -1,12 +1,37 @@
 import { $ } from "bun";
 import { mkdir } from "fs/promises";
 
+const targets = [
+  "bun-linux-x64",
+  "bun-linux-arm64",
+  "bun-darwin-x64",
+  "bun-darwin-arm64",
+  "bun-windows-x64",
+];
+
+const entries = [
+  { src: "src/cli/index.ts", name: "engram" },
+  { src: "src/mcp/server.ts", name: "engram-mcp" },
+];
+
+const cross = process.argv.includes("--cross");
+
 await mkdir("dist", { recursive: true });
 
-console.log("Building CLI binary...");
-await $`bun build src/cli/index.ts --compile --outfile dist/engram`;
+if (cross) {
+  for (const target of targets) {
+    const ext = target.includes("windows") ? ".exe" : "";
+    for (const entry of entries) {
+      const outfile = `dist/${entry.name}-${target}${ext}`;
+      console.log(`Building ${outfile}...`);
+      await $`bun build ${entry.src} --compile --target ${target} --outfile ${outfile}`;
+    }
+  }
+} else {
+  for (const entry of entries) {
+    console.log(`Building ${entry.name}...`);
+    await $`bun build ${entry.src} --compile --outfile dist/${entry.name}`;
+  }
+}
 
-console.log("Building MCP server binary...");
-await $`bun build src/mcp/server.ts --compile --outfile dist/engram-mcp`;
-
-console.log("Done. Binaries in dist/");
+console.log("Done.");

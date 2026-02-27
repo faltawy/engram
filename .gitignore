@@ -5,7 +5,6 @@ dist/
 *.db-wal
 *.db-shm
 .env
-bun.lock
 example/
 CLAUDE.md
 .claude

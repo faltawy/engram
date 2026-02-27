@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 import { defineCommand, runMain } from "citty";
+import pkg from "../../package.json";
 import { encodeCommand } from "./commands/encode.ts";
 import { recallCommand } from "./commands/recall.ts";
 import { focusCommand } from "./commands/focus.ts";
@@ -12,7 +13,7 @@ import { healthCommand } from "./commands/health.ts";
 const main = defineCommand({
   meta: {
     name: "engram",
-    version: "0.1.0",
+    version: pkg.version,
     description: "Human memory for artificial minds",
   },
   subCommands: {
