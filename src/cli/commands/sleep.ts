@@ -34,7 +34,11 @@ export const sleepCommand = defineCommand({
               ? {
                   extractedFacts: result.extractedFacts,
                   prunedIds: result.prunedIds,
-                  chunks: chunks.map((c) => ({ id: c.id, label: c.label, members: c.memberIds.length })),
+                  chunks: chunks.map((c) => ({
+                    id: c.id,
+                    label: c.label,
+                    members: c.memberIds.length,
+                  })),
                 }
               : {}),
           }),

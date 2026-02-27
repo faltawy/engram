@@ -1,6 +1,6 @@
 {
   "name": "engram",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "description": "Human memory for artificial minds — a cognitive memory system modeled on neuroscience",
   "module": "src/index.ts",
   "type": "module",
@@ -21,6 +21,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.1",
     "citty": "^0.2.1",
+    "cli-table3": "^0.6.5",
     "dayjs": "^1.11.19",
     "drizzle-orm": "^0.45.1",
     "kleur": "^4.1.5",

@@ -5,7 +5,9 @@ export const memories = sqliteTable(
   "memories",
   {
     id: text("id").primaryKey(),
-    type: text("type", { enum: Object.values(MemoryType) as [MemoryType, ...MemoryType[]] }).notNull(),
+    type: text("type", {
+      enum: Object.values(MemoryType) as [MemoryType, ...MemoryType[]],
+    }).notNull(),
     content: text("content").notNull(),
     encodedAt: integer("encoded_at").notNull(),
     lastRecalledAt: integer("last_recalled_at"),

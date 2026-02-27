@@ -21,7 +21,11 @@ export class EngramEngine {
   readonly config: CognitiveConfig;
   readonly projectContext: string | null;
 
-  private constructor(storage: EngramStorage, config: CognitiveConfig, projectContext: string | null) {
+  private constructor(
+    storage: EngramStorage,
+    config: CognitiveConfig,
+    projectContext: string | null,
+  ) {
     this.storage = storage;
     this.config = config;
     this.projectContext = projectContext;

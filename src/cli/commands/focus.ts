@@ -46,7 +46,9 @@ export const focusCommand = defineCommand({
       if (args.pop) {
         const popped = popFocus(engine.storage);
         if (!isInteractive()) {
-          console.log(JSON.stringify(popped ? { slot: popped.slot, content: popped.content } : null));
+          console.log(
+            JSON.stringify(popped ? { slot: popped.slot, content: popped.content } : null),
+          );
         } else if (popped) {
           console.log(dim("  Removed: ") + bold(popped.content));
         } else {

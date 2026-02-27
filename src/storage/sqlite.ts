@@ -4,7 +4,13 @@ import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 import { eq, and, gt, lt, or, desc, asc, count, sql } from "drizzle-orm";
 import { memories, accessLog, associations, workingMemory, consolidationLog } from "./schema.ts";
 import type { MemoryType, AccessType } from "../core/memory.ts";
-import type { Memory, AccessLogEntry, Association, WorkingMemorySlot, ConsolidationLog } from "./schema.ts";
+import type {
+  Memory,
+  AccessLogEntry,
+  Association,
+  WorkingMemorySlot,
+  ConsolidationLog,
+} from "./schema.ts";
 import { generateId } from "../core/memory.ts";
 import { resolveDbPath } from "../config/defaults.ts";
 import { mkdirSync, existsSync } from "node:fs";
@@ -37,10 +43,16 @@ export class EngramStorage {
       END
     `);
 
-    const ftsCount = this.sqlite.prepare("SELECT count(*) as c FROM memories_fts").get() as { c: number };
-    const memCount = this.sqlite.prepare("SELECT count(*) as c FROM memories").get() as { c: number };
+    const ftsCount = this.sqlite.prepare("SELECT count(*) as c FROM memories_fts").get() as {
+      c: number;
+    };
+    const memCount = this.sqlite.prepare("SELECT count(*) as c FROM memories").get() as {
+      c: number;
+    };
     if (ftsCount.c === 0 && memCount.c > 0) {
-      this.sqlite.run("INSERT INTO memories_fts(memory_id, content) SELECT id, content FROM memories");
+      this.sqlite.run(
+        "INSERT INTO memories_fts(memory_id, content) SELECT id, content FROM memories",
+      );
     }
   }
 
@@ -106,8 +118,7 @@ export class EngramStorage {
         .from(memories)
         .where(eq(memories.type, type))
         .orderBy(desc(memories.encodedAt))
-        .all()
-        ;
+        .all();
     }
     return this.db.select().from(memories).orderBy(desc(memories.encodedAt)).all();
   }
@@ -139,8 +150,7 @@ export class EngramStorage {
       .from(memories)
       .where(gt(memories.activation, threshold))
       .orderBy(desc(memories.activation))
-      .all()
-      ;
+      .all();
   }
 
   getMemoriesBelowActivation(threshold: number): Memory[] {
@@ -149,8 +159,7 @@ export class EngramStorage {
       .from(memories)
       .where(and(lt(memories.activation, threshold), sql`${memories.type} != 'procedural'`))
       .orderBy(asc(memories.activation))
-      .all()
-      ;
+      .all();
   }
 
   searchMemories(query: string, limit = 20): Memory[] {
@@ -160,8 +169,7 @@ export class EngramStorage {
       .where(sql`${memories.content} LIKE ${"%" + query + "%"}`)
       .orderBy(desc(memories.activation))
       .limit(limit)
-      .all()
-      ;
+      .all();
   }
 
   getMemoryCount(type?: MemoryType): number {
@@ -177,10 +185,36 @@ export class EngramStorage {
     return result?.value ?? 0;
   }
 
+  getMemoriesByContext(context: string, type?: MemoryType, limit = 20): Memory[] {
+    const conditions = [sql`${memories.context} LIKE ${context + "%"}`];
+    if (type) conditions.push(eq(memories.type, type));
+    return this.db
+      .select()
+      .from(memories)
+      .where(and(...conditions))
+      .orderBy(desc(memories.activation))
+      .limit(limit)
+      .all();
+  }
+
+  getMemoryCountByContext(context: string, type?: MemoryType): number {
+    const conditions = [sql`${memories.context} LIKE ${context + "%"}`];
+    if (type) conditions.push(eq(memories.type, type));
+    const result = this.db
+      .select({ value: count() })
+      .from(memories)
+      .where(and(...conditions))
+      .get();
+    return result?.value ?? 0;
+  }
+
   searchFTS(query: string, limit: number = 20): string[] {
     const sanitized = query.replace(/[^a-zA-Z0-9\s]/g, "").trim();
     if (!sanitized) return [];
-    const terms = sanitized.split(/\s+/).map((t) => `"${t}"*`).join(" OR ");
+    const terms = sanitized
+      .split(/\s+/)
+      .map((t) => `"${t}"*`)
+      .join(" OR ");
     const stmt = this.sqlite.prepare(
       `SELECT memory_id FROM memories_fts WHERE memories_fts MATCH ? ORDER BY rank LIMIT ?`,
     );
@@ -207,8 +241,7 @@ export class EngramStorage {
       .from(accessLog)
       .where(eq(accessLog.memoryId, memoryId))
       .orderBy(asc(accessLog.accessedAt))
-      .all()
-      ;
+      .all();
   }
 
   getAccessTimestamps(memoryId: string): number[] {
@@ -250,8 +283,7 @@ export class EngramStorage {
       .from(associations)
       .where(eq(associations.sourceId, memoryId))
       .orderBy(desc(associations.strength))
-      .all()
-      ;
+      .all();
   }
 
   getAssociationsTo(memoryId: string): Association[] {
@@ -260,8 +292,7 @@ export class EngramStorage {
       .from(associations)
       .where(eq(associations.targetId, memoryId))
       .orderBy(desc(associations.strength))
-      .all()
-      ;
+      .all();
   }
 
   getAssociations(memoryId: string): Association[] {
@@ -270,8 +301,7 @@ export class EngramStorage {
       .from(associations)
       .where(or(eq(associations.sourceId, memoryId), eq(associations.targetId, memoryId)))
       .orderBy(desc(associations.strength))
-      .all()
-      ;
+      .all();
   }
 
   getFanCount(memoryId: string): number {
@@ -302,12 +332,7 @@ export class EngramStorage {
   // ─── Working Memory ────────────────────────────────────────
 
   getWorkingMemory(): WorkingMemorySlot[] {
-    return this.db
-      .select()
-      .from(workingMemory)
-      .orderBy(asc(workingMemory.slot))
-      .all()
-      ;
+    return this.db.select().from(workingMemory).orderBy(asc(workingMemory.slot)).all();
   }
 
   pushWorkingMemory(slot: WorkingMemorySlot): void {
@@ -375,4 +400,3 @@ export class EngramStorage {
     return this.sqlite.transaction(fn)();
   }
 }
-

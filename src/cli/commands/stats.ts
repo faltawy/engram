@@ -22,6 +22,16 @@ export const statsCommand = defineCommand({
 
       const lastConsolidation = engine.storage.getLastConsolidation();
 
+      const projectContext = engine.projectContext;
+      const projectCounts = projectContext
+        ? {
+            episodic: engine.storage.getMemoryCountByContext(projectContext, "episodic"),
+            semantic: engine.storage.getMemoryCountByContext(projectContext, "semantic"),
+            procedural: engine.storage.getMemoryCountByContext(projectContext, "procedural"),
+            total: engine.storage.getMemoryCountByContext(projectContext),
+          }
+        : null;
+
       if (!isInteractive()) {
         console.log(
           JSON.stringify({
@@ -31,9 +41,8 @@ export const statsCommand = defineCommand({
             procedural: proceduralCount,
             associations: associationCount,
             atRisk,
-            lastConsolidation: lastConsolidation
-              ? { ranAt: lastConsolidation.ranAt }
-              : null,
+            lastConsolidation: lastConsolidation ? { ranAt: lastConsolidation.ranAt } : null,
+            ...(projectCounts ? { project: { context: projectContext, ...projectCounts } } : {}),
           }),
         );
         return;
@@ -69,6 +78,15 @@ export const statsCommand = defineCommand({
         console.log(`  Last sleep:      ${consolidationStatus}`);
       } else {
         console.log(`  Last sleep:      ${dim("never")}`);
+      }
+
+      if (projectCounts) {
+        console.log("");
+        console.log(bold(`  project: ${projectContext}\n`));
+        console.log(`  Episodic:        ${projectCounts.episodic} memories`);
+        console.log(`  Semantic:        ${projectCounts.semantic} facts`);
+        console.log(`  Procedural:      ${projectCounts.procedural} skills`);
+        console.log(dim(`  Total:           ${projectCounts.total} memories`));
       }
     } finally {
       engine.close();

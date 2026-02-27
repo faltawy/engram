@@ -1,5 +1,6 @@
 import type { Memory, RecallResult } from "../core/memory.ts";
 import kleur from "kleur";
+import Table from "cli-table3";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime.js";
 
@@ -161,6 +162,70 @@ export function formatMemoryInspection(
     lines.push(`    Chunk:          ${memory.chunkId.slice(0, 8)}`);
   }
   return lines.join("\n");
+}
+
+export function formatMemoryList(memories: Memory[], context?: string | null): string {
+  if (!isInteractive()) {
+    return JSON.stringify(
+      memories.map((m) => ({
+        id: m.id,
+        type: m.type,
+        content: m.content,
+        activation: m.activation,
+        recallCount: m.recallCount,
+        emotion: m.emotion,
+        context: m.context,
+        encodedAt: m.encodedAt,
+      })),
+    );
+  }
+
+  if (memories.length === 0) {
+    return context
+      ? dim(`  No memories found for context: ${context}`)
+      : dim("  No memories found.");
+  }
+
+  const table = new Table({
+    head: ["", "content", "id", "type", "act.", "recalls", "emotion", "encoded"],
+    style: { head: ["dim"], border: ["dim"] },
+    chars: {
+      top: "─",
+      "top-mid": "┬",
+      "top-left": "┌",
+      "top-right": "┐",
+      bottom: "─",
+      "bottom-mid": "┴",
+      "bottom-left": "└",
+      "bottom-right": "┘",
+      left: "│",
+      "left-mid": "├",
+      mid: "─",
+      "mid-mid": "┼",
+      right: "│",
+      "right-mid": "┤",
+      middle: "│",
+    },
+  });
+
+  for (const m of memories) {
+    const activationColor = m.activation > 0.5 ? green : m.activation > 0 ? yellow : red;
+    const emotionStr =
+      m.emotion !== "neutral" ? formatEmotion(m.emotion, m.emotionWeight) : dim("—");
+
+    table.push([
+      activationColor("●"),
+      m.content,
+      dim(m.id.slice(0, 8)),
+      m.type,
+      m.activation.toFixed(3),
+      m.recallCount > 0 ? `${m.recallCount}x` : dim("—"),
+      emotionStr,
+      formatTimeAgo(m.encodedAt),
+    ]);
+  }
+
+  return table.toString();
 }
 
 export { dim, bold, green, yellow, red, cyan, magenta };

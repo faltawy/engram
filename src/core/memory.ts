@@ -1,5 +1,11 @@
 import type { Memory as _Memory } from "../storage/schema.ts";
-export { type Memory, type AccessLogEntry, type Association, type WorkingMemorySlot, type ConsolidationLog } from "../storage/schema.ts";
+export {
+  type Memory,
+  type AccessLogEntry,
+  type Association,
+  type WorkingMemorySlot,
+  type ConsolidationLog,
+} from "../storage/schema.ts";
 
 export const MemoryType = {
   Episodic: "episodic",

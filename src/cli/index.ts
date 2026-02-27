@@ -5,6 +5,7 @@ import { recallCommand } from "./commands/recall.ts";
 import { focusCommand } from "./commands/focus.ts";
 import { inspectCommand } from "./commands/inspect.ts";
 import { statsCommand } from "./commands/stats.ts";
+import { listCommand } from "./commands/list.ts";
 import { sleepCommand } from "./commands/sleep.ts";
 import { healthCommand } from "./commands/health.ts";
 
@@ -19,6 +20,7 @@ const main = defineCommand({
     recall: recallCommand,
     focus: focusCommand,
     inspect: inspectCommand,
+    list: listCommand,
     stats: statsCommand,
     sleep: sleepCommand,
     health: healthCommand,

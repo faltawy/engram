@@ -31,7 +31,10 @@ function errorResult(text: string): ToolResult {
   return { content: [{ type: "text", text }], isError: true };
 }
 
-export function handleStore(engine: EngramEngine, args: { action: string; [key: string]: unknown }): ToolResult {
+export function handleStore(
+  engine: EngramEngine,
+  args: { action: string; [key: string]: unknown },
+): ToolResult {
   switch (args.action) {
     case "encode":
       return handleEncode(engine.storage, engine.config, args as any, engine.projectContext);
@@ -42,7 +45,10 @@ export function handleStore(engine: EngramEngine, args: { action: string; [key: 
   }
 }
 
-export function handleRecall(engine: EngramEngine, args: { action?: string; [key: string]: unknown }): ToolResult {
+export function handleRecall(
+  engine: EngramEngine,
+  args: { action?: string; [key: string]: unknown },
+): ToolResult {
   const action = args.action ?? "recall";
   switch (action) {
     case "recall":
@@ -56,7 +62,10 @@ export function handleRecall(engine: EngramEngine, args: { action?: string; [key
   }
 }
 
-export function handleManage(engine: EngramEngine, args: { action: string; [key: string]: unknown }): ToolResult {
+export function handleManage(
+  engine: EngramEngine,
+  args: { action: string; [key: string]: unknown },
+): ToolResult {
   switch (args.action) {
     case "consolidate":
       return handleConsolidate(engine.storage, engine.config);
@@ -123,7 +132,14 @@ function handleEncode(
 function handleRecallQuery(
   storage: EngramStorage,
   config: CognitiveConfig,
-  args: { cue: string; limit?: number; type?: string; context?: string; associative?: boolean; verbose?: boolean },
+  args: {
+    cue: string;
+    limit?: number;
+    type?: string;
+    context?: string;
+    associative?: boolean;
+    verbose?: boolean;
+  },
   defaultContext?: string | null,
 ): ToolResult {
   const typeFilter = args.type && isValidMemoryType(args.type) ? args.type : undefined;
