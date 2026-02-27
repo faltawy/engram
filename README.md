@@ -8,6 +8,19 @@ Every AI agent today has amnesia. They process, respond, and forget. engram fixe
 
 The name comes from neuroscience: an **engram** is the physical trace a memory leaves in the brain.
 
+## Installation
+
+Requires [Bun](https://bun.sh) v1.0+.
+
+```bash
+# Run directly (no install)
+bunx @falta/engram
+
+# Or install globally
+bun install -g @falta/engram
+engram --help
+```
+
 ## The Science
 
 engram is built on memory research. Every design decision traces back to how the brain operates.
@@ -153,20 +166,8 @@ Add to your MCP client configuration (e.g., Claude Code `settings.json`):
 {
   "mcpServers": {
     "engram": {
-      "command": "dist/engram-mcp"
-    }
-  }
-}
-```
-
-Or run from source:
-
-```json
-{
-  "mcpServers": {
-    "engram": {
-      "command": "bun",
-      "args": ["run", "/path/to/engram/src/mcp/server.ts"]
+      "command": "bunx",
+      "args": ["@falta/engram-mcp"]
     }
   }
 }
