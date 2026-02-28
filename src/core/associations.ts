@@ -113,28 +113,30 @@ export function formSemanticAssociations(
   storage: EngramStorage,
   memory: Memory,
   now?: number,
+  preloadedMemories?: Memory[],
 ): Association[] {
   const currentTime = now ?? Date.now();
   const keywords = extractKeywords(memory.content);
   if (keywords.length === 0) return [];
 
-  const allMemories = storage.getAllMemories();
+  const candidates = preloadedMemories ?? storage.getAllMemories();
+  const existing = storage.getAssociations(memory.id);
+  const linkedSet = new Set(
+    existing.flatMap((a) => [
+      `${a.sourceId}:${a.targetId}`,
+      `${a.targetId}:${a.sourceId}`,
+    ]),
+  );
   const formed: Association[] = [];
 
-  for (const other of allMemories) {
+  for (const other of candidates) {
     if (other.id === memory.id) continue;
 
     const otherKeywords = extractKeywords(other.content);
     const overlap = keywords.filter((k) => otherKeywords.includes(k));
 
     if (overlap.length > 0) {
-      const existing = storage.getAssociations(memory.id);
-      const alreadyLinked = existing.some(
-        (a) =>
-          (a.sourceId === memory.id && a.targetId === other.id) ||
-          (a.sourceId === other.id && a.targetId === memory.id),
-      );
-      if (alreadyLinked) continue;
+      if (linkedSet.has(`${memory.id}:${other.id}`)) continue;
 
       const strength = overlap.length / Math.max(keywords.length, otherKeywords.length);
       const assoc = formAssociation(
@@ -146,6 +148,8 @@ export function formSemanticAssociations(
         currentTime,
       );
       formed.push(assoc);
+      linkedSet.add(`${memory.id}:${other.id}`);
+      linkedSet.add(`${other.id}:${memory.id}`);
     }
   }
 
@@ -156,26 +160,26 @@ export function formEmotionalAssociations(
   storage: EngramStorage,
   memory: Memory,
   now?: number,
+  preloadedMemories?: Memory[],
 ): Association[] {
   if (memory.emotion === "neutral" || memory.emotionWeight <= 0.3) return [];
 
   const currentTime = now ?? Date.now();
-  const allMemories = storage.getAllMemories();
+  const candidates = preloadedMemories ?? storage.getAllMemories();
+  const existing = storage.getAssociations(memory.id);
+  const emotionalLinks = new Set(
+    existing
+      .filter((a) => a.type === "emotional")
+      .flatMap((a) => [`${a.sourceId}:${a.targetId}`, `${a.targetId}:${a.sourceId}`]),
+  );
   const formed: Association[] = [];
   const memoryTier = AROUSAL_TIERS[memory.emotion];
 
-  for (const other of allMemories) {
+  for (const other of candidates) {
     if (other.id === memory.id) continue;
     if (other.emotion === "neutral" || other.emotionWeight <= 0.3) continue;
 
-    const existing = storage.getAssociations(memory.id);
-    const alreadyLinked = existing.some(
-      (a) =>
-        a.type === "emotional" &&
-        ((a.sourceId === memory.id && a.targetId === other.id) ||
-          (a.sourceId === other.id && a.targetId === memory.id)),
-    );
-    if (alreadyLinked) continue;
+    if (emotionalLinks.has(`${memory.id}:${other.id}`)) continue;
 
     let strength: number;
     if (memory.emotion === other.emotion) {
@@ -190,6 +194,8 @@ export function formEmotionalAssociations(
 
     const assoc = formAssociation(storage, memory.id, other.id, "emotional", strength, currentTime);
     formed.push(assoc);
+    emotionalLinks.add(`${memory.id}:${other.id}`);
+    emotionalLinks.add(`${other.id}:${memory.id}`);
   }
 
   return formed;

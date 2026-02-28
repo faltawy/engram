@@ -69,8 +69,8 @@ export function consolidate(
   const remainingMemories = storage.getAllMemories();
   for (const memory of remainingMemories) {
     const temporalAssocs = formTemporalAssociations(storage, memory, config, currentTime);
-    const semanticAssocs = formSemanticAssociations(storage, memory, currentTime);
-    const emotionalAssocs = formEmotionalAssociations(storage, memory, currentTime);
+    const semanticAssocs = formSemanticAssociations(storage, memory, currentTime, remainingMemories);
+    const emotionalAssocs = formEmotionalAssociations(storage, memory, currentTime, remainingMemories);
     const causalAssocs = formCausalAssociations(storage, memory, config, currentTime);
 
     for (const assoc of [...temporalAssocs, ...semanticAssocs, ...emotionalAssocs, ...causalAssocs]) {

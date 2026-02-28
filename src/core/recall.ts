@@ -35,17 +35,12 @@ export function recall(
     for (const m of contextMatches) seedIds.add(m.id);
   }
 
-  const allCandidates = options?.type
-    ? storage.getAllMemories(options.type)
-    : storage.getAllMemories();
-
-  let filtered = allCandidates;
-  if (options?.context) {
-    filtered = filtered.filter((m) => m.context?.startsWith(options.context!));
-  }
-
-  const sorted = filtered.sort((a, b) => b.activation - a.activation);
-  for (const m of sorted.slice(0, limit)) {
+  const topByActivation = storage.getTopMemoriesByActivation(
+    limit,
+    options?.type,
+    options?.context,
+  );
+  for (const m of topByActivation) {
     seedIds.add(m.id);
   }
 

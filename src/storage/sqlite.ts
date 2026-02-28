@@ -153,6 +153,20 @@ export class EngramStorage {
       .all();
   }
 
+  getTopMemoriesByActivation(limit: number, type?: MemoryType, contextPrefix?: string): Memory[] {
+    const conditions = [];
+    if (type) conditions.push(eq(memories.type, type));
+    if (contextPrefix) conditions.push(sql`${memories.context} LIKE ${contextPrefix + "%"}`);
+
+    return this.db
+      .select()
+      .from(memories)
+      .where(conditions.length ? and(...conditions) : undefined)
+      .orderBy(desc(memories.activation))
+      .limit(limit)
+      .all();
+  }
+
   getMemoriesBelowActivation(threshold: number): Memory[] {
     return this.db
       .select()
