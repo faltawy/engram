@@ -1,5 +1,11 @@
 # @cogmem/engram
 
+## 0.3.1
+
+### Patch Changes
+
+- 9b6b831: Fix `engram install` writing MCP config to wrong files — global now writes to `~/.claude.json` instead of `~/.claude/settings.json`, project writes to `.mcp.json` instead of `.claude/settings.local.json`
+
 ## 0.3.0
 
 ### Minor Changes
