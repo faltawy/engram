@@ -50,11 +50,14 @@ export function resolveDbPath(dbPath: string): string {
   return dbPath;
 }
 
-export function loadConfig(overrides?: Partial<CognitiveConfig>): CognitiveConfig {
+export function loadConfig(
+  overrides?: Partial<CognitiveConfig>
+): CognitiveConfig {
   const config = { ...DEFAULT_CONFIG, ...overrides };
 
   if (process.env.ENGRAM_DB_PATH) config.dbPath = process.env.ENGRAM_DB_PATH;
-  if (process.env.ENGRAM_DECAY_RATE) config.decayRate = Number(process.env.ENGRAM_DECAY_RATE);
+  if (process.env.ENGRAM_DECAY_RATE)
+    config.decayRate = Number(process.env.ENGRAM_DECAY_RATE);
   if (process.env.ENGRAM_WM_CAPACITY)
     config.workingMemoryCapacity = Number(process.env.ENGRAM_WM_CAPACITY);
   if (process.env.ENGRAM_RETRIEVAL_THRESHOLD)

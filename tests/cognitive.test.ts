@@ -1,17 +1,18 @@
 import { test, expect, describe } from "bun:test";
-import { EngramStorage } from "../src/storage/sqlite.ts";
-import { encode } from "../src/core/encoder.ts";
-import { recall } from "../src/core/recall.ts";
+
 import { DEFAULT_CONFIG, type CognitiveConfig } from "../src/config/defaults.ts";
-import { pushFocus, getFocus, clearFocus, focusUtilization } from "../src/core/working-memory.ts";
+import { baseLevelActivation, spreadingActivationStrength } from "../src/core/activation.ts";
 import {
   formAssociation,
   formSemanticAssociations,
   recordCoRecall,
   getSpreadingActivationTargets,
 } from "../src/core/associations.ts";
+import { encode } from "../src/core/encoder.ts";
+import { recall } from "../src/core/recall.ts";
 import { reconsolidate } from "../src/core/reconsolidation.ts";
-import { baseLevelActivation, spreadingActivationStrength } from "../src/core/activation.ts";
+import { pushFocus, getFocus, clearFocus, focusUtilization } from "../src/core/working-memory.ts";
+import { EngramStorage } from "../src/storage/sqlite.ts";
 
 const config: CognitiveConfig = { ...DEFAULT_CONFIG, activationNoise: 0 };
 
@@ -45,7 +46,9 @@ describe("Working Memory Capacity", () => {
     pushFocus(storage, "task C", wmConfig, { now: now + 2000 });
 
     // Push a 4th item — should evict the oldest (task A)
-    const { evicted } = pushFocus(storage, "task D", wmConfig, { now: now + 3000 });
+    const { evicted } = pushFocus(storage, "task D", wmConfig, {
+      now: now + 3000,
+    });
 
     expect(evicted).not.toBeNull();
     expect(evicted!.content).toBe("task A");
@@ -122,19 +125,28 @@ describe("Associative Recall", () => {
 
     const mem1 = encode(
       storage,
-      { content: "typescript generics are powerful for type safety", type: "semantic" },
+      {
+        content: "typescript generics are powerful for type safety",
+        type: "semantic",
+      },
       config,
       now,
     );
     const mem2 = encode(
       storage,
-      { content: "typescript interfaces provide type safety contracts", type: "semantic" },
+      {
+        content: "typescript interfaces provide type safety contracts",
+        type: "semantic",
+      },
       config,
       now,
     );
     const mem3 = encode(
       storage,
-      { content: "rust borrow checker ensures memory safety", type: "semantic" },
+      {
+        content: "rust borrow checker ensures memory safety",
+        type: "semantic",
+      },
       config,
       now,
     );

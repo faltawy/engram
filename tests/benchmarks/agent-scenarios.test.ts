@@ -1,11 +1,12 @@
 import { test, expect, describe } from "bun:test";
-import { EngramStorage } from "../../src/storage/sqlite.ts";
-import { encode } from "../../src/core/encoder.ts";
-import { recall } from "../../src/core/recall.ts";
-import { consolidate } from "../../src/core/consolidation.ts";
-import { pushFocus } from "../../src/core/working-memory.ts";
+
 import { DEFAULT_CONFIG, type CognitiveConfig } from "../../src/config/defaults.ts";
+import { consolidate } from "../../src/core/consolidation.ts";
+import { encode } from "../../src/core/encoder.ts";
 import type { EncodeInput } from "../../src/core/memory.ts";
+import { recall } from "../../src/core/recall.ts";
+import { pushFocus } from "../../src/core/working-memory.ts";
+import { EngramStorage } from "../../src/storage/sqlite.ts";
 import { hitRate, avgRank } from "./helpers.ts";
 
 const config: CognitiveConfig = {
@@ -26,24 +27,80 @@ describe("Multi-Session Project", () => {
     const day = 86400000;
 
     const session1: EncodeInput[] = [
-      { content: "user reported intermittent 500 errors on checkout page", type: "episodic", context: "project:ecommerce", emotion: "anxiety", emotionWeight: 0.6 },
-      { content: "checked application logs found null pointer in payment service", type: "episodic", context: "project:ecommerce" },
-      { content: "payment service connects to stripe API through gateway proxy", type: "semantic", context: "project:ecommerce" },
-      { content: "gateway proxy has connection pool limit of 10 concurrent", type: "semantic", context: "project:ecommerce" },
-      { content: "hypothesis: connection pool exhaustion during peak traffic", type: "episodic", context: "project:ecommerce", emotion: "curiosity", emotionWeight: 0.4 },
+      {
+        content: "user reported intermittent 500 errors on checkout page",
+        type: "episodic",
+        context: "project:ecommerce",
+        emotion: "anxiety",
+        emotionWeight: 0.6,
+      },
+      {
+        content: "checked application logs found null pointer in payment service",
+        type: "episodic",
+        context: "project:ecommerce",
+      },
+      {
+        content: "payment service connects to stripe API through gateway proxy",
+        type: "semantic",
+        context: "project:ecommerce",
+      },
+      {
+        content: "gateway proxy has connection pool limit of 10 concurrent",
+        type: "semantic",
+        context: "project:ecommerce",
+      },
+      {
+        content: "hypothesis: connection pool exhaustion during peak traffic",
+        type: "episodic",
+        context: "project:ecommerce",
+        emotion: "curiosity",
+        emotionWeight: 0.4,
+      },
     ];
 
     const session2: EncodeInput[] = [
-      { content: "added connection pool metrics to grafana dashboard", type: "episodic", context: "project:ecommerce" },
-      { content: "observed pool saturation at 100% during 2pm-4pm window", type: "episodic", context: "project:ecommerce", emotion: "satisfaction", emotionWeight: 0.5 },
-      { content: "increased gateway pool size from 10 to 50 connections", type: "episodic", context: "project:ecommerce" },
-      { content: "added circuit breaker to payment service for pool exhaustion", type: "episodic", context: "project:ecommerce" },
+      {
+        content: "added connection pool metrics to grafana dashboard",
+        type: "episodic",
+        context: "project:ecommerce",
+      },
+      {
+        content: "observed pool saturation at 100% during 2pm-4pm window",
+        type: "episodic",
+        context: "project:ecommerce",
+        emotion: "satisfaction",
+        emotionWeight: 0.5,
+      },
+      {
+        content: "increased gateway pool size from 10 to 50 connections",
+        type: "episodic",
+        context: "project:ecommerce",
+      },
+      {
+        content: "added circuit breaker to payment service for pool exhaustion",
+        type: "episodic",
+        context: "project:ecommerce",
+      },
     ];
 
     const session3: EncodeInput[] = [
-      { content: "monitored checkout error rate dropped to zero after pool fix", type: "episodic", context: "project:ecommerce", emotion: "satisfaction", emotionWeight: 0.7 },
-      { content: "retrospective: root cause was undersized connection pool in gateway", type: "semantic", context: "project:ecommerce" },
-      { content: "lesson learned: always monitor connection pool utilization", type: "semantic", context: "project:ecommerce" },
+      {
+        content: "monitored checkout error rate dropped to zero after pool fix",
+        type: "episodic",
+        context: "project:ecommerce",
+        emotion: "satisfaction",
+        emotionWeight: 0.7,
+      },
+      {
+        content: "retrospective: root cause was undersized connection pool in gateway",
+        type: "semantic",
+        context: "project:ecommerce",
+      },
+      {
+        content: "lesson learned: always monitor connection pool utilization",
+        type: "semantic",
+        context: "project:ecommerce",
+      },
     ];
 
     const allIds: string[] = [];
@@ -78,10 +135,31 @@ describe("Debugging History", () => {
     const now = 1000000000;
 
     const investigation: EncodeInput[] = [
-      { content: "TypeError cannot read property map of undefined in UserList component", type: "episodic", context: "debug:typeerror", emotion: "frustration", emotionWeight: 0.6 },
-      { content: "UserList receives props from parent but data fetch returns null before loading", type: "episodic", context: "debug:typeerror" },
-      { content: "added null check and loading state to UserList component", type: "episodic", context: "debug:typeerror", emotion: "satisfaction", emotionWeight: 0.4 },
-      { content: "pattern: always handle loading and error states for async data in React components", type: "semantic", context: "debug:typeerror" },
+      {
+        content: "TypeError cannot read property map of undefined in UserList component",
+        type: "episodic",
+        context: "debug:typeerror",
+        emotion: "frustration",
+        emotionWeight: 0.6,
+      },
+      {
+        content: "UserList receives props from parent but data fetch returns null before loading",
+        type: "episodic",
+        context: "debug:typeerror",
+      },
+      {
+        content: "added null check and loading state to UserList component",
+        type: "episodic",
+        context: "debug:typeerror",
+        emotion: "satisfaction",
+        emotionWeight: 0.4,
+      },
+      {
+        content:
+          "pattern: always handle loading and error states for async data in React components",
+        type: "semantic",
+        context: "debug:typeerror",
+      },
     ];
 
     const ids: string[] = [];
@@ -116,12 +194,36 @@ describe("Preference Learning", () => {
     const day = 86400000;
 
     const preferences: EncodeInput[] = [
-      { content: "prefer typescript strict mode for all new projects", type: "semantic", context: "prefs:coding" },
-      { content: "always use prettier with single quotes and no semicolons", type: "semantic", context: "prefs:coding" },
-      { content: "prefer functional components over class components in React", type: "semantic", context: "prefs:coding" },
-      { content: "use bun over npm for package management speed", type: "semantic", context: "prefs:coding" },
-      { content: "prefer tailwind CSS over styled-components for styling", type: "semantic", context: "prefs:coding" },
-      { content: "always write tests before implementation TDD workflow", type: "semantic", context: "prefs:coding" },
+      {
+        content: "prefer typescript strict mode for all new projects",
+        type: "semantic",
+        context: "prefs:coding",
+      },
+      {
+        content: "always use prettier with single quotes and no semicolons",
+        type: "semantic",
+        context: "prefs:coding",
+      },
+      {
+        content: "prefer functional components over class components in React",
+        type: "semantic",
+        context: "prefs:coding",
+      },
+      {
+        content: "use bun over npm for package management speed",
+        type: "semantic",
+        context: "prefs:coding",
+      },
+      {
+        content: "prefer tailwind CSS over styled-components for styling",
+        type: "semantic",
+        context: "prefs:coding",
+      },
+      {
+        content: "always write tests before implementation TDD workflow",
+        type: "semantic",
+        context: "prefs:coding",
+      },
     ];
 
     const ids: string[] = [];
@@ -152,22 +254,37 @@ describe("Knowledge Evolution", () => {
     const now = 1000000000;
     const day = 86400000;
 
-    const earlyConfusion = encode(storage, {
-      content: "monads are confusing abstract math concept in functional programming",
-      type: "episodic",
-      emotion: "frustration",
-      emotionWeight: 0.6,
-    }, config, now);
+    const earlyConfusion = encode(
+      storage,
+      {
+        content: "monads are confusing abstract math concept in functional programming",
+        type: "episodic",
+        emotion: "frustration",
+        emotionWeight: 0.6,
+      },
+      config,
+      now,
+    );
 
-    const midLearning = encode(storage, {
-      content: "monads are like chainable containers that handle side effects",
-      type: "semantic",
-    }, config, now + day * 3);
+    const midLearning = encode(
+      storage,
+      {
+        content: "monads are like chainable containers that handle side effects",
+        type: "semantic",
+      },
+      config,
+      now + day * 3,
+    );
 
-    const finalUnderstanding = encode(storage, {
-      content: "monads provide composable error handling and async flow control",
-      type: "semantic",
-    }, config, now + day * 7);
+    const finalUnderstanding = encode(
+      storage,
+      {
+        content: "monads provide composable error handling and async flow control",
+        type: "semantic",
+      },
+      config,
+      now + day * 7,
+    );
 
     for (let i = 0; i < 3; i++) {
       storage.logAccess(finalUnderstanding.id, "recall", now + day * (8 + i));
@@ -197,21 +314,57 @@ describe("Context Switching", () => {
     const now = 1000000000;
 
     const projectA: EncodeInput[] = [
-      { content: "API design for user management service", type: "semantic", context: "project:alpha" },
-      { content: "implemented REST endpoints for user CRUD operations", type: "episodic", context: "project:alpha" },
-      { content: "user service deployed to production successfully", type: "episodic", context: "project:alpha" },
+      {
+        content: "API design for user management service",
+        type: "semantic",
+        context: "project:alpha",
+      },
+      {
+        content: "implemented REST endpoints for user CRUD operations",
+        type: "episodic",
+        context: "project:alpha",
+      },
+      {
+        content: "user service deployed to production successfully",
+        type: "episodic",
+        context: "project:alpha",
+      },
     ];
 
     const projectB: EncodeInput[] = [
-      { content: "API design for inventory tracking service", type: "semantic", context: "project:beta" },
-      { content: "implemented GraphQL endpoints for inventory queries", type: "episodic", context: "project:beta" },
-      { content: "inventory service deployed to staging environment", type: "episodic", context: "project:beta" },
+      {
+        content: "API design for inventory tracking service",
+        type: "semantic",
+        context: "project:beta",
+      },
+      {
+        content: "implemented GraphQL endpoints for inventory queries",
+        type: "episodic",
+        context: "project:beta",
+      },
+      {
+        content: "inventory service deployed to staging environment",
+        type: "episodic",
+        context: "project:beta",
+      },
     ];
 
     const projectC: EncodeInput[] = [
-      { content: "API design for notification delivery service", type: "semantic", context: "project:gamma" },
-      { content: "implemented websocket endpoints for real-time notifications", type: "episodic", context: "project:gamma" },
-      { content: "notification service load tested for 10000 concurrent users", type: "episodic", context: "project:gamma" },
+      {
+        content: "API design for notification delivery service",
+        type: "semantic",
+        context: "project:gamma",
+      },
+      {
+        content: "implemented websocket endpoints for real-time notifications",
+        type: "episodic",
+        context: "project:gamma",
+      },
+      {
+        content: "notification service load tested for 10000 concurrent users",
+        type: "episodic",
+        context: "project:gamma",
+      },
     ];
 
     const idsA: string[] = [];
@@ -219,9 +372,18 @@ describe("Context Switching", () => {
     const idsC: string[] = [];
 
     let time = now;
-    for (const input of projectA) { idsA.push(encode(storage, input, config, time).id); time += 1000; }
-    for (const input of projectB) { idsB.push(encode(storage, input, config, time).id); time += 1000; }
-    for (const input of projectC) { idsC.push(encode(storage, input, config, time).id); time += 1000; }
+    for (const input of projectA) {
+      idsA.push(encode(storage, input, config, time).id);
+      time += 1000;
+    }
+    for (const input of projectB) {
+      idsB.push(encode(storage, input, config, time).id);
+      time += 1000;
+    }
+    for (const input of projectC) {
+      idsC.push(encode(storage, input, config, time).id);
+      time += 1000;
+    }
 
     consolidate(storage, config, time + 1000);
 
@@ -243,23 +405,38 @@ describe("Context Switching", () => {
     const storage = makeStorage();
     const now = 1000000000;
 
-    const mem1 = encode(storage, {
-      content: "authentication module uses bcrypt hashing",
-      type: "semantic",
-      context: "project:webapp",
-    }, config, now);
+    const mem1 = encode(
+      storage,
+      {
+        content: "authentication module uses bcrypt hashing",
+        type: "semantic",
+        context: "project:webapp",
+      },
+      config,
+      now,
+    );
 
-    const mem2 = encode(storage, {
-      content: "session tokens stored in httponly secure cookies",
-      type: "semantic",
-      context: "project:webapp",
-    }, config, now + 1000);
+    const mem2 = encode(
+      storage,
+      {
+        content: "session tokens stored in httponly secure cookies",
+        type: "semantic",
+        context: "project:webapp",
+      },
+      config,
+      now + 1000,
+    );
 
-    const mem3 = encode(storage, {
-      content: "password reset flow sends email with time-limited token",
-      type: "semantic",
-      context: "project:webapp",
-    }, config, now + 2000);
+    const mem3 = encode(
+      storage,
+      {
+        content: "password reset flow sends email with time-limited token",
+        type: "semantic",
+        context: "project:webapp",
+      },
+      config,
+      now + 2000,
+    );
 
     consolidate(storage, config, now + 10000);
 
@@ -288,16 +465,66 @@ describe("Scenario Scoring", () => {
     const day = 86400000;
 
     const weekOfWork: EncodeInput[] = [
-      { content: "started new microservice for payment processing", type: "episodic", context: "project:payments", emotion: "curiosity", emotionWeight: 0.4 },
-      { content: "designed database schema with transactions and ledger tables", type: "episodic", context: "project:payments" },
-      { content: "implemented idempotency keys for payment retry safety", type: "episodic", context: "project:payments", emotion: "satisfaction", emotionWeight: 0.4 },
-      { content: "stripe webhook integration handles payment_intent events", type: "semantic", context: "project:payments" },
-      { content: "added dead letter queue for failed webhook processing", type: "episodic", context: "project:payments" },
-      { content: "load testing showed 500ms p99 latency for payment creation", type: "episodic", context: "project:payments", emotion: "frustration", emotionWeight: 0.5 },
-      { content: "optimized payment creation by batching database writes", type: "episodic", context: "project:payments", emotion: "satisfaction", emotionWeight: 0.5 },
-      { content: "p99 latency reduced to 150ms after batching optimization", type: "episodic", context: "project:payments", emotion: "joy", emotionWeight: 0.6 },
-      { content: "refund processing implemented with partial refund support", type: "episodic", context: "project:payments" },
-      { content: "PCI compliance audit checklist reviewed and documented", type: "procedural", context: "project:payments" },
+      {
+        content: "started new microservice for payment processing",
+        type: "episodic",
+        context: "project:payments",
+        emotion: "curiosity",
+        emotionWeight: 0.4,
+      },
+      {
+        content: "designed database schema with transactions and ledger tables",
+        type: "episodic",
+        context: "project:payments",
+      },
+      {
+        content: "implemented idempotency keys for payment retry safety",
+        type: "episodic",
+        context: "project:payments",
+        emotion: "satisfaction",
+        emotionWeight: 0.4,
+      },
+      {
+        content: "stripe webhook integration handles payment_intent events",
+        type: "semantic",
+        context: "project:payments",
+      },
+      {
+        content: "added dead letter queue for failed webhook processing",
+        type: "episodic",
+        context: "project:payments",
+      },
+      {
+        content: "load testing showed 500ms p99 latency for payment creation",
+        type: "episodic",
+        context: "project:payments",
+        emotion: "frustration",
+        emotionWeight: 0.5,
+      },
+      {
+        content: "optimized payment creation by batching database writes",
+        type: "episodic",
+        context: "project:payments",
+        emotion: "satisfaction",
+        emotionWeight: 0.5,
+      },
+      {
+        content: "p99 latency reduced to 150ms after batching optimization",
+        type: "episodic",
+        context: "project:payments",
+        emotion: "joy",
+        emotionWeight: 0.6,
+      },
+      {
+        content: "refund processing implemented with partial refund support",
+        type: "episodic",
+        context: "project:payments",
+      },
+      {
+        content: "PCI compliance audit checklist reviewed and documented",
+        type: "procedural",
+        context: "project:payments",
+      },
     ];
 
     const ids: string[] = [];
@@ -357,75 +584,342 @@ describe("Long Time-Scale Project", () => {
     const week = day * 7;
 
     const week1: EncodeInput[] = [
-      { content: "kicked off billing rewrite project sprint planning session", type: "episodic", context: "project:rewrite", emotion: "curiosity", emotionWeight: 0.5 },
-      { content: "architecture decision: event-sourced billing with CQRS pattern", type: "semantic", context: "project:rewrite" },
-      { content: "mapped legacy billing domain models to new schema design", type: "episodic", context: "project:rewrite" },
-      { content: "discovered legacy discount rules buried in stored procedures", type: "episodic", context: "project:rewrite", emotion: "surprise", emotionWeight: 0.6 },
-      { content: "documented 15 distinct discount rule types from legacy system", type: "episodic", context: "project:rewrite" },
-      { content: "legacy discount rules include volume tiers percentage and fixed amount", type: "semantic", context: "project:rewrite" },
-      { content: "designed discount engine interface supporting composable rules", type: "semantic", context: "project:rewrite" },
-      { content: "implemented base billing aggregate with event replay capability", type: "episodic", context: "project:rewrite" },
-      { content: "set up event store with PostgreSQL and outbox pattern", type: "procedural", context: "project:rewrite" },
-      { content: "created migration scripts for legacy billing data transformation", type: "procedural", context: "project:rewrite" },
-      { content: "legacy system handles 50000 invoices monthly during peak", type: "semantic", context: "project:rewrite" },
-      { content: "defined billing context bounded context with clear aggregate boundaries", type: "semantic", context: "project:rewrite" },
-      { content: "spike: evaluated temporal workflow engine for billing orchestration", type: "episodic", context: "project:rewrite" },
-      { content: "decided against temporal due to operational complexity concerns", type: "semantic", context: "project:rewrite" },
-      { content: "sprint review: completed domain modeling and architecture decisions", type: "episodic", context: "project:rewrite", emotion: "satisfaction", emotionWeight: 0.5 },
+      {
+        content: "kicked off billing rewrite project sprint planning session",
+        type: "episodic",
+        context: "project:rewrite",
+        emotion: "curiosity",
+        emotionWeight: 0.5,
+      },
+      {
+        content: "architecture decision: event-sourced billing with CQRS pattern",
+        type: "semantic",
+        context: "project:rewrite",
+      },
+      {
+        content: "mapped legacy billing domain models to new schema design",
+        type: "episodic",
+        context: "project:rewrite",
+      },
+      {
+        content: "discovered legacy discount rules buried in stored procedures",
+        type: "episodic",
+        context: "project:rewrite",
+        emotion: "surprise",
+        emotionWeight: 0.6,
+      },
+      {
+        content: "documented 15 distinct discount rule types from legacy system",
+        type: "episodic",
+        context: "project:rewrite",
+      },
+      {
+        content: "legacy discount rules include volume tiers percentage and fixed amount",
+        type: "semantic",
+        context: "project:rewrite",
+      },
+      {
+        content: "designed discount engine interface supporting composable rules",
+        type: "semantic",
+        context: "project:rewrite",
+      },
+      {
+        content: "implemented base billing aggregate with event replay capability",
+        type: "episodic",
+        context: "project:rewrite",
+      },
+      {
+        content: "set up event store with PostgreSQL and outbox pattern",
+        type: "procedural",
+        context: "project:rewrite",
+      },
+      {
+        content: "created migration scripts for legacy billing data transformation",
+        type: "procedural",
+        context: "project:rewrite",
+      },
+      {
+        content: "legacy system handles 50000 invoices monthly during peak",
+        type: "semantic",
+        context: "project:rewrite",
+      },
+      {
+        content: "defined billing context bounded context with clear aggregate boundaries",
+        type: "semantic",
+        context: "project:rewrite",
+      },
+      {
+        content: "spike: evaluated temporal workflow engine for billing orchestration",
+        type: "episodic",
+        context: "project:rewrite",
+      },
+      {
+        content: "decided against temporal due to operational complexity concerns",
+        type: "semantic",
+        context: "project:rewrite",
+      },
+      {
+        content: "sprint review: completed domain modeling and architecture decisions",
+        type: "episodic",
+        context: "project:rewrite",
+        emotion: "satisfaction",
+        emotionWeight: 0.5,
+      },
     ];
 
     const week2: EncodeInput[] = [
-      { content: "started Stripe payment integration for billing rewrite", type: "episodic", context: "project:rewrite" },
-      { content: "Stripe payment intent API requires idempotency keys for safety", type: "semantic", context: "project:rewrite" },
-      { content: "implemented payment intent creation with idempotency key generation", type: "episodic", context: "project:rewrite" },
-      { content: "configured Stripe webhook endpoint for payment event processing", type: "procedural", context: "project:rewrite" },
-      { content: "webhook signature verification prevents replay attacks", type: "semantic", context: "project:rewrite" },
-      { content: "implemented payment retry logic with exponential backoff", type: "episodic", context: "project:rewrite" },
-      { content: "idempotency ensures retried payments are not double charged", type: "semantic", context: "project:rewrite" },
-      { content: "added reconciliation job comparing Stripe records with local ledger", type: "episodic", context: "project:rewrite" },
-      { content: "reconciliation found 3 edge cases in refund timing", type: "episodic", context: "project:rewrite", emotion: "frustration", emotionWeight: 0.5 },
-      { content: "fixed refund timing race condition with distributed lock", type: "episodic", context: "project:rewrite", emotion: "satisfaction", emotionWeight: 0.5 },
-      { content: "Stripe error handling covers network timeout and rate limit scenarios", type: "semantic", context: "project:rewrite" },
-      { content: "payment service error codes mapped to customer-facing messages", type: "semantic", context: "project:rewrite" },
-      { content: "added dead letter queue for unprocessable payment events", type: "episodic", context: "project:rewrite" },
-      { content: "implemented payment audit trail with immutable event log", type: "procedural", context: "project:rewrite" },
-      { content: "payment integration passes all Stripe test mode scenarios", type: "episodic", context: "project:rewrite", emotion: "satisfaction", emotionWeight: 0.4 },
+      {
+        content: "started Stripe payment integration for billing rewrite",
+        type: "episodic",
+        context: "project:rewrite",
+      },
+      {
+        content: "Stripe payment intent API requires idempotency keys for safety",
+        type: "semantic",
+        context: "project:rewrite",
+      },
+      {
+        content: "implemented payment intent creation with idempotency key generation",
+        type: "episodic",
+        context: "project:rewrite",
+      },
+      {
+        content: "configured Stripe webhook endpoint for payment event processing",
+        type: "procedural",
+        context: "project:rewrite",
+      },
+      {
+        content: "webhook signature verification prevents replay attacks",
+        type: "semantic",
+        context: "project:rewrite",
+      },
+      {
+        content: "implemented payment retry logic with exponential backoff",
+        type: "episodic",
+        context: "project:rewrite",
+      },
+      {
+        content: "idempotency ensures retried payments are not double charged",
+        type: "semantic",
+        context: "project:rewrite",
+      },
+      {
+        content: "added reconciliation job comparing Stripe records with local ledger",
+        type: "episodic",
+        context: "project:rewrite",
+      },
+      {
+        content: "reconciliation found 3 edge cases in refund timing",
+        type: "episodic",
+        context: "project:rewrite",
+        emotion: "frustration",
+        emotionWeight: 0.5,
+      },
+      {
+        content: "fixed refund timing race condition with distributed lock",
+        type: "episodic",
+        context: "project:rewrite",
+        emotion: "satisfaction",
+        emotionWeight: 0.5,
+      },
+      {
+        content: "Stripe error handling covers network timeout and rate limit scenarios",
+        type: "semantic",
+        context: "project:rewrite",
+      },
+      {
+        content: "payment service error codes mapped to customer-facing messages",
+        type: "semantic",
+        context: "project:rewrite",
+      },
+      {
+        content: "added dead letter queue for unprocessable payment events",
+        type: "episodic",
+        context: "project:rewrite",
+      },
+      {
+        content: "implemented payment audit trail with immutable event log",
+        type: "procedural",
+        context: "project:rewrite",
+      },
+      {
+        content: "payment integration passes all Stripe test mode scenarios",
+        type: "episodic",
+        context: "project:rewrite",
+        emotion: "satisfaction",
+        emotionWeight: 0.4,
+      },
     ];
 
     const week3: EncodeInput[] = [
-      { content: "started subscription engine implementation for recurring billing", type: "episodic", context: "project:rewrite" },
-      { content: "subscription lifecycle: trial activation renewal cancellation states", type: "semantic", context: "project:rewrite" },
-      { content: "implemented subscription state machine with explicit transitions", type: "episodic", context: "project:rewrite" },
-      { content: "proration calculates mid-cycle upgrade and downgrade adjustments", type: "semantic", context: "project:rewrite" },
-      { content: "proration uses daily rate calculation for upgrade credit", type: "episodic", context: "project:rewrite" },
-      { content: "dunning process retries failed subscription payments three times", type: "semantic", context: "project:rewrite" },
-      { content: "implemented dunning email sequence: reminder warning suspension", type: "episodic", context: "project:rewrite" },
-      { content: "usage-based billing tracks metered API calls per subscription", type: "semantic", context: "project:rewrite" },
-      { content: "usage aggregation runs hourly with 5-minute billing granularity", type: "procedural", context: "project:rewrite" },
-      { content: "implemented usage billing threshold alerts for customers", type: "episodic", context: "project:rewrite" },
-      { content: "subscription migration tool handles legacy plan mapping", type: "procedural", context: "project:rewrite" },
-      { content: "migration dry-run identified 200 accounts needing manual review", type: "episodic", context: "project:rewrite", emotion: "anxiety", emotionWeight: 0.4 },
-      { content: "resolved migration conflicts for grandfathered pricing plans", type: "episodic", context: "project:rewrite" },
-      { content: "subscription engine handles timezone-aware billing cycles", type: "semantic", context: "project:rewrite" },
-      { content: "all subscription state transitions covered by property-based tests", type: "episodic", context: "project:rewrite", emotion: "satisfaction", emotionWeight: 0.4 },
+      {
+        content: "started subscription engine implementation for recurring billing",
+        type: "episodic",
+        context: "project:rewrite",
+      },
+      {
+        content: "subscription lifecycle: trial activation renewal cancellation states",
+        type: "semantic",
+        context: "project:rewrite",
+      },
+      {
+        content: "implemented subscription state machine with explicit transitions",
+        type: "episodic",
+        context: "project:rewrite",
+      },
+      {
+        content: "proration calculates mid-cycle upgrade and downgrade adjustments",
+        type: "semantic",
+        context: "project:rewrite",
+      },
+      {
+        content: "proration uses daily rate calculation for upgrade credit",
+        type: "episodic",
+        context: "project:rewrite",
+      },
+      {
+        content: "dunning process retries failed subscription payments three times",
+        type: "semantic",
+        context: "project:rewrite",
+      },
+      {
+        content: "implemented dunning email sequence: reminder warning suspension",
+        type: "episodic",
+        context: "project:rewrite",
+      },
+      {
+        content: "usage-based billing tracks metered API calls per subscription",
+        type: "semantic",
+        context: "project:rewrite",
+      },
+      {
+        content: "usage aggregation runs hourly with 5-minute billing granularity",
+        type: "procedural",
+        context: "project:rewrite",
+      },
+      {
+        content: "implemented usage billing threshold alerts for customers",
+        type: "episodic",
+        context: "project:rewrite",
+      },
+      {
+        content: "subscription migration tool handles legacy plan mapping",
+        type: "procedural",
+        context: "project:rewrite",
+      },
+      {
+        content: "migration dry-run identified 200 accounts needing manual review",
+        type: "episodic",
+        context: "project:rewrite",
+        emotion: "anxiety",
+        emotionWeight: 0.4,
+      },
+      {
+        content: "resolved migration conflicts for grandfathered pricing plans",
+        type: "episodic",
+        context: "project:rewrite",
+      },
+      {
+        content: "subscription engine handles timezone-aware billing cycles",
+        type: "semantic",
+        context: "project:rewrite",
+      },
+      {
+        content: "all subscription state transitions covered by property-based tests",
+        type: "episodic",
+        context: "project:rewrite",
+        emotion: "satisfaction",
+        emotionWeight: 0.4,
+      },
     ];
 
     const week4: EncodeInput[] = [
-      { content: "started integration testing phase for billing rewrite", type: "episodic", context: "project:rewrite" },
-      { content: "integration tests cover payment subscription and discount flows", type: "procedural", context: "project:rewrite" },
-      { content: "shadow billing runs new system in parallel with legacy for comparison", type: "episodic", context: "project:rewrite" },
-      { content: "shadow billing found 0.3% discrepancy in tax calculation rounding", type: "episodic", context: "project:rewrite", emotion: "frustration", emotionWeight: 0.4 },
-      { content: "fixed tax rounding by using banker rounding consistently", type: "episodic", context: "project:rewrite" },
-      { content: "load testing simulated 100000 concurrent billing operations", type: "episodic", context: "project:rewrite" },
-      { content: "load test revealed connection pool bottleneck at 80000 ops", type: "episodic", context: "project:rewrite", emotion: "anxiety", emotionWeight: 0.5 },
-      { content: "resolved bottleneck by adding read replicas for billing queries", type: "episodic", context: "project:rewrite", emotion: "satisfaction", emotionWeight: 0.5 },
-      { content: "production deployment plan uses blue-green with instant rollback", type: "procedural", context: "project:rewrite" },
-      { content: "rollback procedure tested: switches DNS back to legacy in 30 seconds", type: "procedural", context: "project:rewrite" },
-      { content: "feature flags control gradual migration of customer cohorts", type: "semantic", context: "project:rewrite" },
-      { content: "deployed billing rewrite to 5% of traffic as initial canary", type: "episodic", context: "project:rewrite" },
-      { content: "canary metrics show 40% latency improvement over legacy billing", type: "episodic", context: "project:rewrite", emotion: "joy", emotionWeight: 0.7 },
-      { content: "expanded to 50% traffic after 48 hours of clean canary metrics", type: "episodic", context: "project:rewrite" },
-      { content: "billing rewrite retrospective: project completed on schedule with improved architecture", type: "episodic", context: "project:rewrite", emotion: "satisfaction", emotionWeight: 0.8 },
+      {
+        content: "started integration testing phase for billing rewrite",
+        type: "episodic",
+        context: "project:rewrite",
+      },
+      {
+        content: "integration tests cover payment subscription and discount flows",
+        type: "procedural",
+        context: "project:rewrite",
+      },
+      {
+        content: "shadow billing runs new system in parallel with legacy for comparison",
+        type: "episodic",
+        context: "project:rewrite",
+      },
+      {
+        content: "shadow billing found 0.3% discrepancy in tax calculation rounding",
+        type: "episodic",
+        context: "project:rewrite",
+        emotion: "frustration",
+        emotionWeight: 0.4,
+      },
+      {
+        content: "fixed tax rounding by using banker rounding consistently",
+        type: "episodic",
+        context: "project:rewrite",
+      },
+      {
+        content: "load testing simulated 100000 concurrent billing operations",
+        type: "episodic",
+        context: "project:rewrite",
+      },
+      {
+        content: "load test revealed connection pool bottleneck at 80000 ops",
+        type: "episodic",
+        context: "project:rewrite",
+        emotion: "anxiety",
+        emotionWeight: 0.5,
+      },
+      {
+        content: "resolved bottleneck by adding read replicas for billing queries",
+        type: "episodic",
+        context: "project:rewrite",
+        emotion: "satisfaction",
+        emotionWeight: 0.5,
+      },
+      {
+        content: "production deployment plan uses blue-green with instant rollback",
+        type: "procedural",
+        context: "project:rewrite",
+      },
+      {
+        content: "rollback procedure tested: switches DNS back to legacy in 30 seconds",
+        type: "procedural",
+        context: "project:rewrite",
+      },
+      {
+        content: "feature flags control gradual migration of customer cohorts",
+        type: "semantic",
+        context: "project:rewrite",
+      },
+      {
+        content: "deployed billing rewrite to 5% of traffic as initial canary",
+        type: "episodic",
+        context: "project:rewrite",
+      },
+      {
+        content: "canary metrics show 40% latency improvement over legacy billing",
+        type: "episodic",
+        context: "project:rewrite",
+        emotion: "joy",
+        emotionWeight: 0.7,
+      },
+      {
+        content: "expanded to 50% traffic after 48 hours of clean canary metrics",
+        type: "episodic",
+        context: "project:rewrite",
+      },
+      {
+        content:
+          "billing rewrite retrospective: project completed on schedule with improved architecture",
+        type: "episodic",
+        context: "project:rewrite",
+        emotion: "satisfaction",
+        emotionWeight: 0.8,
+      },
     ];
 
     const allIds: string[] = [];
@@ -492,14 +986,20 @@ describe("Long Time-Scale Project", () => {
       context: "project:rewrite",
     });
     const q5Weeks = new Set(
-      q5Results.map((r) => {
-        const idx = allIds.indexOf(r.memory.id);
-        return Math.floor(idx / 15);
-      }).filter((w) => w >= 0)
+      q5Results
+        .map((r) => {
+          const idx = allIds.indexOf(r.memory.id);
+          return Math.floor(idx / 15);
+        })
+        .filter((w) => w >= 0),
     );
     expect(q5Weeks.size).toBeGreaterThanOrEqual(2);
 
-    console.log(`[Long Project] Q1(w1): ${q1Week1} Q2(w2): ${q2Week2} Q3(w3): ${q3Week3} Q4(w4): ${q4Week4} Q5(weeks): ${[...q5Weeks].join(",")}`);
+    console.log(
+      `[Long Project] Q1(w1): ${q1Week1} Q2(w2): ${q2Week2} Q3(w3): ${q3Week3} Q4(w4): ${q4Week4} Q5(weeks): ${[
+        ...q5Weeks,
+      ].join(",")}`,
+    );
 
     storage.close();
   });

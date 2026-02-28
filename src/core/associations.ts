@@ -122,10 +122,7 @@ export function formSemanticAssociations(
   const candidates = preloadedMemories ?? storage.getAllMemories();
   const existing = storage.getAssociations(memory.id);
   const linkedSet = new Set(
-    existing.flatMap((a) => [
-      `${a.sourceId}:${a.targetId}`,
-      `${a.targetId}:${a.sourceId}`,
-    ]),
+    existing.flatMap((a) => [`${a.sourceId}:${a.targetId}`, `${a.targetId}:${a.sourceId}`]),
   );
   const formed: Association[] = [];
 

@@ -1,7 +1,7 @@
 import type { CognitiveConfig } from "../config/defaults.ts";
 import type { EngramStorage } from "../storage/sqlite.ts";
-import type { Memory } from "./memory.ts";
 import { encode } from "./encoder.ts";
+import type { Memory } from "./memory.ts";
 
 export function encodeProcedural(
   storage: EngramStorage,

@@ -1,8 +1,9 @@
+import { execSync } from "node:child_process";
+import { basename } from "node:path";
+
 import type { CognitiveConfig } from "../config/defaults.ts";
 import { loadConfig } from "../config/defaults.ts";
 import { EngramStorage } from "../storage/sqlite.ts";
-import { execSync } from "node:child_process";
-import { basename } from "node:path";
 
 export function detectProjectContext(): string | null {
   try {

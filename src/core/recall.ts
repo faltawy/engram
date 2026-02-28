@@ -1,8 +1,11 @@
 import type { CognitiveConfig } from "../config/defaults.ts";
 import type { EngramStorage } from "../storage/sqlite.ts";
-import type { Memory, RecallResult } from "./memory.ts";
-import { computeActivation, spreadingActivationStrength } from "./activation.ts";
+import {
+  computeActivation,
+  spreadingActivationStrength,
+} from "./activation.ts";
 import { getSpreadingActivationTargets } from "./associations.ts";
+import type { Memory, RecallResult } from "./memory.ts";
 import { getWorkingMemoryIds } from "./working-memory.ts";
 
 export function recall(
@@ -16,7 +19,7 @@ export function recall(
     context?: string;
     now?: number;
     deterministic?: boolean;
-  },
+  }
 ): RecallResult[] {
   const now = options?.now ?? Date.now();
   const limit = options?.limit ?? 10;
@@ -31,14 +34,18 @@ export function recall(
   for (const id of ftsIds) seedIds.add(id);
 
   if (options?.context) {
-    const contextMatches = storage.getMemoriesByContext(options.context, options?.type, limit * 2);
+    const contextMatches = storage.getMemoriesByContext(
+      options.context,
+      options?.type,
+      limit * 2
+    );
     for (const m of contextMatches) seedIds.add(m.id);
   }
 
   const topByActivation = storage.getTopMemoriesByActivation(
     limit,
     options?.type,
-    options?.context,
+    options?.context
   );
   for (const m of topByActivation) {
     seedIds.add(m.id);
@@ -56,7 +63,10 @@ export function recall(
       for (const t of targets) {
         candidateIds.add(t.memoryId);
         const existing = graphBoosts.get(t.memoryId) ?? 0;
-        graphBoosts.set(t.memoryId, existing + t.activationBoost * primingWeight);
+        graphBoosts.set(
+          t.memoryId,
+          existing + t.activationBoost * primingWeight
+        );
       }
     }
   }
@@ -66,7 +76,11 @@ export function recall(
     const m = storage.getMemory(id);
     if (!m) continue;
     if (options?.type && m.type !== options.type) continue;
-    if (options?.context && (!m.context || !m.context.startsWith(options.context))) continue;
+    if (
+      options?.context &&
+      (!m.context || !m.context.startsWith(options.context))
+    )
+      continue;
     candidateMap.set(m.id, m);
   }
 
@@ -84,9 +98,13 @@ export function recall(
       const allAssocs = [...assocFrom, ...assocTo];
 
       for (const assoc of allAssocs) {
-        const otherId = assoc.sourceId === memory.id ? assoc.targetId : assoc.sourceId;
+        const otherId =
+          assoc.sourceId === memory.id ? assoc.targetId : assoc.sourceId;
         const fanCount = storage.getFanCount(otherId);
-        const strength = spreadingActivationStrength(config.maxSpreadingActivation, fanCount);
+        const strength = spreadingActivationStrength(
+          config.maxSpreadingActivation,
+          fanCount
+        );
         spreadingSum += assoc.strength * strength;
       }
     }

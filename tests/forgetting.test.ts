@@ -1,10 +1,11 @@
 import { test, expect, describe } from "bun:test";
-import { EngramStorage } from "../src/storage/sqlite.ts";
-import { encode } from "../src/core/encoder.ts";
-import { recall } from "../src/core/recall.ts";
-import { baseLevelActivation } from "../src/core/activation.ts";
-import { ebbinghausRetention, memoryStrength } from "../src/core/forgetting.ts";
+
 import { DEFAULT_CONFIG, type CognitiveConfig } from "../src/config/defaults.ts";
+import { baseLevelActivation } from "../src/core/activation.ts";
+import { encode } from "../src/core/encoder.ts";
+import { ebbinghausRetention, memoryStrength } from "../src/core/forgetting.ts";
+import { recall } from "../src/core/recall.ts";
+import { EngramStorage } from "../src/storage/sqlite.ts";
 
 const config: CognitiveConfig = { ...DEFAULT_CONFIG, activationNoise: 0 };
 

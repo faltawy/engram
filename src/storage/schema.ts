@@ -1,4 +1,5 @@
 import { sqliteTable, text, integer, real, index, unique } from "drizzle-orm/sqlite-core";
+
 import { MemoryType, Emotion, AssociationType, AccessType } from "../core/memory.ts";
 
 export const memories = sqliteTable(

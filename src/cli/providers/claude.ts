@@ -1,6 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
-import { join } from "node:path";
 import { homedir } from "node:os";
+import { join } from "node:path";
+
 import type { ProviderInstaller } from "./types.ts";
 
 const MCP_SERVER_CONFIG = {
@@ -60,7 +61,12 @@ export const claudeProvider: ProviderInstaller = {
     const skillInstalled = installSkill(skillDir, skillContent, dryRun);
     const mcpInstalled = configureMcp(configPath, dryRun);
 
-    const status = !skillInstalled && !mcpInstalled ? "already_installed" : skillInstalled && mcpInstalled ? "installed" : "updated";
+    const status =
+      !skillInstalled && !mcpInstalled
+        ? "already_installed"
+        : skillInstalled && mcpInstalled
+          ? "installed"
+          : "updated";
 
     return {
       status,
@@ -77,7 +83,12 @@ export const claudeProvider: ProviderInstaller = {
     const skillInstalled = installSkill(skillDir, skillContent, dryRun);
     const mcpInstalled = configureMcp(configPath, dryRun);
 
-    const status = !skillInstalled && !mcpInstalled ? "already_installed" : skillInstalled && mcpInstalled ? "installed" : "updated";
+    const status =
+      !skillInstalled && !mcpInstalled
+        ? "already_installed"
+        : skillInstalled && mcpInstalled
+          ? "installed"
+          : "updated";
 
     return {
       status,

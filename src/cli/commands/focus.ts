@@ -1,4 +1,5 @@
 import { defineCommand } from "citty";
+
 import { EngramEngine } from "../../core/engine.ts";
 import {
   pushFocus,
@@ -17,7 +18,8 @@ export const focusCommand = defineCommand({
   args: {
     content: {
       type: "positional",
-      description: "Content to push into working memory (omit to view current focus)",
+      description:
+        "Content to push into working memory (omit to view current focus)",
     },
     clear: {
       type: "boolean",
@@ -47,7 +49,9 @@ export const focusCommand = defineCommand({
         const popped = popFocus(engine.storage);
         if (!isInteractive()) {
           console.log(
-            JSON.stringify(popped ? { slot: popped.slot, content: popped.content } : null),
+            JSON.stringify(
+              popped ? { slot: popped.slot, content: popped.content } : null
+            )
           );
         } else if (popped) {
           console.log(dim("  Removed: ") + bold(popped.content));
@@ -58,34 +62,55 @@ export const focusCommand = defineCommand({
       }
 
       if (args.content) {
-        const { slot, evicted } = pushFocus(engine.storage, args.content, engine.config);
+        const { slot, evicted } = pushFocus(
+          engine.storage,
+          args.content,
+          engine.config
+        );
         if (!isInteractive()) {
           console.log(
             JSON.stringify({
               slot: slot.slot,
               content: slot.content,
-              evicted: evicted ? { slot: evicted.slot, content: evicted.content } : null,
-            }),
+              evicted: evicted
+                ? { slot: evicted.slot, content: evicted.content }
+                : null,
+            })
           );
         } else {
-          console.log(cyan("  Focused on: ") + bold(slot.content) + dim(` [slot ${slot.slot}]`));
+          console.log(
+            cyan("  Focused on: ") +
+              bold(slot.content) +
+              dim(` [slot ${slot.slot}]`)
+          );
           if (evicted) {
-            console.log(dim(`  Evicted: "${evicted.content}" (oldest item, capacity reached)`));
+            console.log(
+              dim(
+                `  Evicted: "${evicted.content}" (oldest item, capacity reached)`
+              )
+            );
           }
         }
         return;
       }
 
       const slots = getFocus(engine.storage);
-      const { used, capacity } = focusUtilization(engine.storage, engine.config);
+      const { used, capacity } = focusUtilization(
+        engine.storage,
+        engine.config
+      );
 
       if (!isInteractive()) {
         console.log(
           JSON.stringify({
             used,
             capacity,
-            slots: slots.map((s) => ({ slot: s.slot, content: s.content, memoryRef: s.memoryRef })),
-          }),
+            slots: slots.map((s) => ({
+              slot: s.slot,
+              content: s.content,
+              memoryRef: s.memoryRef,
+            })),
+          })
         );
         return;
       }
@@ -97,7 +122,9 @@ export const focusCommand = defineCommand({
 
       console.log(bold(`  Working Memory`) + dim(` [${used}/${capacity}]`));
       for (const slot of slots) {
-        console.log(`  ${cyan(">")} ${slot.content}` + dim(` [slot ${slot.slot}]`));
+        console.log(
+          `  ${cyan(">")} ${slot.content}` + dim(` [slot ${slot.slot}]`)
+        );
       }
     } finally {
       engine.close();

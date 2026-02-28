@@ -39,16 +39,12 @@
       "indexes": {
         "idx_access_log_memory_id": {
           "name": "idx_access_log_memory_id",
-          "columns": [
-            "memory_id"
-          ],
+          "columns": ["memory_id"],
           "isUnique": false
         },
         "idx_access_log_accessed_at": {
           "name": "idx_access_log_accessed_at",
-          "columns": [
-            "accessed_at"
-          ],
+          "columns": ["accessed_at"],
           "isUnique": false
         }
       },
@@ -57,12 +53,8 @@
           "name": "access_log_memory_id_memories_id_fk",
           "tableFrom": "access_log",
           "tableTo": "memories",
-          "columnsFrom": [
-            "memory_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["memory_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -121,24 +113,17 @@
       "indexes": {
         "idx_associations_source": {
           "name": "idx_associations_source",
-          "columns": [
-            "source_id"
-          ],
+          "columns": ["source_id"],
           "isUnique": false
         },
         "idx_associations_target": {
           "name": "idx_associations_target",
-          "columns": [
-            "target_id"
-          ],
+          "columns": ["target_id"],
           "isUnique": false
         },
         "unique_source_target": {
           "name": "unique_source_target",
-          "columns": [
-            "source_id",
-            "target_id"
-          ],
+          "columns": ["source_id", "target_id"],
           "isUnique": true
         }
       },
@@ -147,12 +132,8 @@
           "name": "associations_source_id_memories_id_fk",
           "tableFrom": "associations",
           "tableTo": "memories",
-          "columnsFrom": [
-            "source_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["source_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -160,12 +141,8 @@
           "name": "associations_target_id_memories_id_fk",
           "tableFrom": "associations",
           "tableTo": "memories",
-          "columnsFrom": [
-            "target_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["target_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -326,37 +303,27 @@
       "indexes": {
         "idx_memories_type": {
           "name": "idx_memories_type",
-          "columns": [
-            "type"
-          ],
+          "columns": ["type"],
           "isUnique": false
         },
         "idx_memories_activation": {
           "name": "idx_memories_activation",
-          "columns": [
-            "activation"
-          ],
+          "columns": ["activation"],
           "isUnique": false
         },
         "idx_memories_encoded_at": {
           "name": "idx_memories_encoded_at",
-          "columns": [
-            "encoded_at"
-          ],
+          "columns": ["encoded_at"],
           "isUnique": false
         },
         "idx_memories_context": {
           "name": "idx_memories_context",
-          "columns": [
-            "context"
-          ],
+          "columns": ["context"],
           "isUnique": false
         },
         "idx_memories_chunk_id": {
           "name": "idx_memories_chunk_id",
-          "columns": [
-            "chunk_id"
-          ],
+          "columns": ["chunk_id"],
           "isUnique": false
         }
       },

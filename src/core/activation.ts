@@ -4,7 +4,7 @@ import type { CognitiveConfig } from "../config/defaults.ts";
 export function baseLevelActivation(
   accessTimestamps: number[],
   now: number,
-  decayRate: number,
+  decayRate: number
 ): number {
   if (accessTimestamps.length === 0) return -Infinity;
 
@@ -18,13 +18,20 @@ export function baseLevelActivation(
 }
 
 // S_ji = S - ln(fan_j)
-export function spreadingActivationStrength(maxStrength: number, fanCount: number): number {
+export function spreadingActivationStrength(
+  maxStrength: number,
+  fanCount: number
+): number {
   if (fanCount <= 0) return 0;
   return Math.max(0, maxStrength - Math.log(fanCount));
 }
 
 // A_i = B_i + Σ(W_j · S_ji) + ε
-export function totalActivation(baseLevel: number, spreadingSum: number, noise: number): number {
+export function totalActivation(
+  baseLevel: number,
+  spreadingSum: number,
+  noise: number
+): number {
   return baseLevel + spreadingSum + noise;
 }
 
@@ -44,7 +51,7 @@ export function canRetrieve(activation: number, threshold: number): boolean {
 export function retrievalLatency(
   activation: number,
   latencyFactor: number,
-  latencyExponent: number,
+  latencyExponent: number
 ): number {
   return latencyFactor * Math.exp(-latencyExponent * activation);
 }
@@ -57,19 +64,44 @@ export function computeActivation(
     spreadingSum?: number;
     noiseOverride?: number;
     emotionWeight?: number;
-  },
-): { activation: number; baseLevel: number; spreading: number; noise: number; latency: number } {
-  const baseLevel = baseLevelActivation(accessTimestamps, now, config.decayRate);
+  }
+): {
+  activation: number;
+  baseLevel: number;
+  spreading: number;
+  noise: number;
+  latency: number;
+} {
+  const baseLevel = baseLevelActivation(
+    accessTimestamps,
+    now,
+    config.decayRate
+  );
 
   const emotionBoost = options?.emotionWeight
     ? Math.log(1 + options.emotionWeight * config.emotionalBoostFactor)
     : 0;
 
   const spreading = options?.spreadingSum ?? 0;
-  const noise = options?.noiseOverride ?? activationNoise(config.activationNoise);
+  const noise =
+    options?.noiseOverride ?? activationNoise(config.activationNoise);
 
-  const activation = totalActivation(baseLevel + emotionBoost, spreading, noise);
-  const latency = retrievalLatency(activation, config.latencyFactor, config.latencyExponent);
+  const activation = totalActivation(
+    baseLevel + emotionBoost,
+    spreading,
+    noise
+  );
+  const latency = retrievalLatency(
+    activation,
+    config.latencyFactor,
+    config.latencyExponent
+  );
 
-  return { activation, baseLevel: baseLevel + emotionBoost, spreading, noise, latency };
+  return {
+    activation,
+    baseLevel: baseLevel + emotionBoost,
+    spreading,
+    noise,
+    latency,
+  };
 }

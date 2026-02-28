@@ -2,6 +2,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod/v4";
+
 import { EngramEngine } from "../core/engine.ts";
 import { MemoryType, Emotion } from "../core/memory.ts";
 import { handleStore, handleRecall, handleManage } from "./tools.ts";
@@ -22,10 +23,21 @@ server.registerTool(
       z.object({
         action: z.literal("encode"),
         content: z.string().describe("Memory content"),
-        type: z.nativeEnum(MemoryType).optional().describe("Memory type (default: semantic)"),
+        type: z
+          .nativeEnum(MemoryType)
+          .optional()
+          .describe("Memory type (default: semantic)"),
         emotion: z.nativeEnum(Emotion).optional().describe("Emotional tag"),
-        emotionWeight: z.number().min(0).max(1).optional().describe("Emotion intensity 0-1"),
-        context: z.string().optional().describe("Context tag (e.g. project:acme)"),
+        emotionWeight: z
+          .number()
+          .min(0)
+          .max(1)
+          .optional()
+          .describe("Emotion intensity 0-1"),
+        context: z
+          .string()
+          .optional()
+          .describe("Context tag (e.g. project:acme)"),
       }),
       z.object({
         action: z.literal("encode_batch"),
@@ -37,7 +49,7 @@ server.registerTool(
               emotion: z.nativeEnum(Emotion).optional(),
               emotionWeight: z.number().min(0).max(1).optional(),
               context: z.string().optional(),
-            }),
+            })
           )
           .min(1)
           .max(50)
@@ -47,12 +59,20 @@ server.registerTool(
         action: z.literal("reconsolidate"),
         id: z.string().describe("Memory ID to update"),
         newContext: z.string().optional().describe("New context to blend"),
-        currentEmotion: z.nativeEnum(Emotion).optional().describe("Current emotional state"),
-        currentEmotionWeight: z.number().min(0).max(1).optional().describe("Emotion intensity"),
+        currentEmotion: z
+          .nativeEnum(Emotion)
+          .optional()
+          .describe("Current emotional state"),
+        currentEmotionWeight: z
+          .number()
+          .min(0)
+          .max(1)
+          .optional()
+          .describe("Emotion intensity"),
       }),
     ]),
   },
-  async (args) => handleStore(engine, args),
+  async (args) => handleStore(engine, args)
 );
 
 server.registerTool(
@@ -67,9 +87,15 @@ server.registerTool(
         limit: z.number().optional().describe("Max results (default: 5)"),
         type: z.nativeEnum(MemoryType).optional().describe("Filter by type"),
         context: z.string().optional().describe("Filter by context"),
-        associative: z.boolean().optional().describe("Spreading activation (default: true)"),
+        associative: z
+          .boolean()
+          .optional()
+          .describe("Spreading activation (default: true)"),
         verbose: z.boolean().optional().describe("Full fields"),
-        format: z.enum(["full", "content", "ids"]).optional().describe("Response format (default: full)"),
+        format: z
+          .enum(["full", "content", "ids"])
+          .optional()
+          .describe("Response format (default: full)"),
       }),
       z.object({
         action: z.literal("inspect"),
@@ -80,15 +106,21 @@ server.registerTool(
         type: z.nativeEnum(MemoryType).optional().describe("Filter by type"),
         context: z.string().optional().describe("Filter by context prefix"),
         limit: z.number().optional().describe("Max results (default: 20)"),
-        offset: z.number().optional().describe("Skip first N results (default: 0)"),
-        format: z.enum(["full", "content", "ids"]).optional().describe("Response format (default: full)"),
+        offset: z
+          .number()
+          .optional()
+          .describe("Skip first N results (default: 0)"),
+        format: z
+          .enum(["full", "content", "ids"])
+          .optional()
+          .describe("Response format (default: full)"),
       }),
       z.object({
         action: z.literal("stats"),
       }),
     ]),
   },
-  async (args) => handleRecall(engine, args),
+  async (args) => handleRecall(engine, args)
 );
 
 server.registerTool(
@@ -103,7 +135,10 @@ server.registerTool(
       z.object({
         action: z.literal("focus_push"),
         content: z.string().describe("Content to hold in focus"),
-        memoryRef: z.string().optional().describe("Reference to existing memory ID"),
+        memoryRef: z
+          .string()
+          .optional()
+          .describe("Reference to existing memory ID"),
       }),
       z.object({
         action: z.literal("focus_pop"),
@@ -117,13 +152,16 @@ server.registerTool(
       z.object({
         action: z.literal("recall_to_focus"),
         cue: z.string().describe("Recall cue"),
-        limit: z.number().optional().describe("Max memories to load (default: 3)"),
+        limit: z
+          .number()
+          .optional()
+          .describe("Max memories to load (default: 3)"),
         type: z.nativeEnum(MemoryType).optional().describe("Filter by type"),
         context: z.string().optional().describe("Filter by context"),
       }),
     ]),
   },
-  async (args) => handleManage(engine, args),
+  async (args) => handleManage(engine, args)
 );
 
 async function main() {

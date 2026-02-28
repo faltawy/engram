@@ -1,8 +1,9 @@
 import { test, expect, describe } from "bun:test";
-import { EngramEngine } from "../src/core/engine.ts";
+
 import { DEFAULT_CONFIG, type CognitiveConfig } from "../src/config/defaults.ts";
-import { handleStore, handleRecall, handleManage } from "../src/mcp/tools.ts";
+import { EngramEngine } from "../src/core/engine.ts";
 import { pushFocus } from "../src/core/working-memory.ts";
+import { handleStore, handleRecall, handleManage } from "../src/mcp/tools.ts";
 
 const config: CognitiveConfig = { ...DEFAULT_CONFIG, activationNoise: 0 };
 
@@ -36,14 +37,22 @@ describe("memory_store", () => {
 
   test("encode rejects invalid type", () => {
     const engine = makeEngine();
-    const result = handleStore(engine, { action: "encode", content: "test", type: "invalid" });
+    const result = handleStore(engine, {
+      action: "encode",
+      content: "test",
+      type: "invalid",
+    });
     expect(result.isError).toBe(true);
     engine.close();
   });
 
   test("encode rejects invalid emotion", () => {
     const engine = makeEngine();
-    const result = handleStore(engine, { action: "encode", content: "test", emotion: "rage" });
+    const result = handleStore(engine, {
+      action: "encode",
+      content: "test",
+      emotion: "rage",
+    });
     expect(result.isError).toBe(true);
     engine.close();
   });
@@ -59,7 +68,10 @@ describe("memory_store", () => {
     });
     const encoded = parseResult(encodeResult);
 
-    const reconEngine = EngramEngine.inMemory({ activationNoise: 0, reconsolidationBlendRate: 0.5 });
+    const reconEngine = EngramEngine.inMemory({
+      activationNoise: 0,
+      reconsolidationBlendRate: 0.5,
+    });
     handleStore(reconEngine, {
       action: "encode",
       content: "deployment went wrong",
@@ -88,7 +100,10 @@ describe("memory_store", () => {
 
   test("reconsolidate returns error for missing memory", () => {
     const engine = makeEngine();
-    const result = handleStore(engine, { action: "reconsolidate", id: "nonexistent" });
+    const result = handleStore(engine, {
+      action: "reconsolidate",
+      id: "nonexistent",
+    });
     expect(result.isError).toBe(true);
     engine.close();
   });
@@ -98,10 +113,19 @@ describe("memory_recall", () => {
   test("recall finds encoded memories", () => {
     const engine = makeEngine();
 
-    handleStore(engine, { action: "encode", content: "kubernetes deployment guide" });
-    handleStore(engine, { action: "encode", content: "react component patterns" });
+    handleStore(engine, {
+      action: "encode",
+      content: "kubernetes deployment guide",
+    });
+    handleStore(engine, {
+      action: "encode",
+      content: "react component patterns",
+    });
 
-    const result = handleRecall(engine, { action: "recall", cue: "kubernetes" });
+    const result = handleRecall(engine, {
+      action: "recall",
+      cue: "kubernetes",
+    });
     expect(result.isError).toBeUndefined();
     const data = parseResult(result);
     expect(data.length).toBeGreaterThan(0);
@@ -129,7 +153,11 @@ describe("memory_recall", () => {
     const engine = makeEngine();
     handleStore(engine, { action: "encode", content: "test memory" });
 
-    const result = handleRecall(engine, { action: "recall", cue: "test", verbose: true });
+    const result = handleRecall(engine, {
+      action: "recall",
+      cue: "test",
+      verbose: true,
+    });
     const data = parseResult(result);
     expect(data[0]).toHaveProperty("spreadingActivation");
     expect(data[0]).toHaveProperty("latency");
@@ -156,7 +184,10 @@ describe("memory_recall", () => {
     });
     const encoded = parseResult(encodeResult);
 
-    const result = handleRecall(engine, { action: "inspect", id: encoded.id.slice(0, 8) });
+    const result = handleRecall(engine, {
+      action: "inspect",
+      id: encoded.id.slice(0, 8),
+    });
     const data = parseResult(result);
 
     expect(data.id).toBe(encoded.id);
@@ -171,7 +202,10 @@ describe("memory_recall", () => {
 
   test("inspect returns error for missing memory", () => {
     const engine = makeEngine();
-    const result = handleRecall(engine, { action: "inspect", id: "nonexistent" });
+    const result = handleRecall(engine, {
+      action: "inspect",
+      id: "nonexistent",
+    });
     expect(result.isError).toBe(true);
     engine.close();
   });
@@ -179,9 +213,21 @@ describe("memory_recall", () => {
   test("stats returns system overview", () => {
     const engine = makeEngine();
 
-    handleStore(engine, { action: "encode", content: "episodic event", type: "episodic" });
-    handleStore(engine, { action: "encode", content: "semantic fact", type: "semantic" });
-    handleStore(engine, { action: "encode", content: "procedural skill", type: "procedural" });
+    handleStore(engine, {
+      action: "encode",
+      content: "episodic event",
+      type: "episodic",
+    });
+    handleStore(engine, {
+      action: "encode",
+      content: "semantic fact",
+      type: "semantic",
+    });
+    handleStore(engine, {
+      action: "encode",
+      content: "procedural skill",
+      type: "procedural",
+    });
 
     const result = handleRecall(engine, { action: "stats" });
     const data = parseResult(result);
@@ -200,7 +246,10 @@ describe("memory_manage", () => {
   test("focus_push and focus_get work together", () => {
     const engine = makeEngine();
 
-    handleManage(engine, { action: "focus_push", content: "refactoring auth module" });
+    handleManage(engine, {
+      action: "focus_push",
+      content: "refactoring auth module",
+    });
     handleManage(engine, { action: "focus_push", content: "fixing bug #123" });
 
     const getResult = handleManage(engine, { action: "focus_get" });
@@ -248,8 +297,16 @@ describe("memory_manage", () => {
   test("consolidate runs full cycle", () => {
     const engine = makeEngine();
 
-    handleStore(engine, { action: "encode", content: "memory alpha", type: "semantic" });
-    handleStore(engine, { action: "encode", content: "memory beta", type: "semantic" });
+    handleStore(engine, {
+      action: "encode",
+      content: "memory alpha",
+      type: "semantic",
+    });
+    handleStore(engine, {
+      action: "encode",
+      content: "memory beta",
+      type: "semantic",
+    });
 
     const result = handleManage(engine, { action: "consolidate" });
     const data = parseResult(result);
@@ -265,9 +322,15 @@ describe("memory_manage", () => {
 
   test("recall_to_focus loads recalled memories into working memory", () => {
     const engine = makeEngine();
-    handleStore(engine, { action: "encode", content: "important architecture decision" });
+    handleStore(engine, {
+      action: "encode",
+      content: "important architecture decision",
+    });
 
-    const result = handleManage(engine, { action: "recall_to_focus", cue: "architecture" });
+    const result = handleManage(engine, {
+      action: "recall_to_focus",
+      cue: "architecture",
+    });
     const data = parseResult(result);
     expect(data.loaded.length).toBeGreaterThan(0);
     expect(data.focus.used).toBe(data.loaded.length);
@@ -285,7 +348,11 @@ describe("encode_batch", () => {
       memories: [
         { content: "fact one" },
         { content: "fact two", type: "episodic" },
-        { content: "fact three", emotion: "curiosity", context: "project:test" },
+        {
+          content: "fact three",
+          emotion: "curiosity",
+          context: "project:test",
+        },
       ],
     });
     const data = parseResult(result);
@@ -301,10 +368,7 @@ describe("encode_batch", () => {
     const engine = makeEngine();
     const result = handleStore(engine, {
       action: "encode_batch",
-      memories: [
-        { content: "valid memory" },
-        { content: "bad type", type: "invalid" as any },
-      ],
+      memories: [{ content: "valid memory" }, { content: "bad type", type: "invalid" as any }],
     });
     const data = parseResult(result);
     expect(data.stored).toHaveLength(1);
@@ -336,7 +400,11 @@ describe("list action", () => {
     for (let i = 0; i < 5; i++) {
       handleStore(engine, { action: "encode", content: `memory ${i}` });
     }
-    const result = handleRecall(engine, { action: "list", limit: 2, offset: 1 });
+    const result = handleRecall(engine, {
+      action: "list",
+      limit: 2,
+      offset: 1,
+    });
     const data = parseResult(result);
     expect(data).toHaveLength(2);
 
@@ -372,7 +440,11 @@ describe("recall format param", () => {
     const engine = makeEngine();
     handleStore(engine, { action: "encode", content: "recall me" });
 
-    const result = handleRecall(engine, { action: "recall", cue: "recall", format: "content" });
+    const result = handleRecall(engine, {
+      action: "recall",
+      cue: "recall",
+      format: "content",
+    });
     const data = parseResult(result);
     expect(data[0]).toBe("recall me");
 
@@ -383,7 +455,11 @@ describe("recall format param", () => {
     const engine = makeEngine();
     handleStore(engine, { action: "encode", content: "recall me too" });
 
-    const result = handleRecall(engine, { action: "recall", cue: "recall", format: "ids" });
+    const result = handleRecall(engine, {
+      action: "recall",
+      cue: "recall",
+      format: "ids",
+    });
     const data = parseResult(result);
     expect(typeof data[0]).toBe("string");
     expect(data[0]).toMatch(/^sem:/);

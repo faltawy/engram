@@ -12,5 +12,9 @@ export interface ProviderInstaller {
   displayName: string;
   available: boolean;
   installGlobal(skillContent: string, dryRun: boolean): Promise<InstallResult>;
-  installProject(skillContent: string, projectDir: string, dryRun: boolean): Promise<InstallResult>;
+  installProject(
+    skillContent: string,
+    projectDir: string,
+    dryRun: boolean
+  ): Promise<InstallResult>;
 }

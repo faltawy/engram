@@ -1,8 +1,5 @@
 import type { CognitiveConfig } from "../config/defaults.ts";
 import type { EngramStorage } from "../storage/sqlite.ts";
-import type { Memory, ConsolidationLog } from "./memory.ts";
-import { generateId } from "./memory.ts";
-import { refreshActivations } from "./forgetting.ts";
 import {
   formSemanticAssociations,
   formTemporalAssociations,
@@ -10,6 +7,9 @@ import {
   formCausalAssociations,
 } from "./associations.ts";
 import { encode } from "./encoder.ts";
+import { refreshActivations } from "./forgetting.ts";
+import type { Memory, ConsolidationLog } from "./memory.ts";
+import { generateId } from "./memory.ts";
 import { extractKeywords, tokenize } from "./search.ts";
 
 export interface ConsolidationResult {
@@ -69,11 +69,26 @@ export function consolidate(
   const remainingMemories = storage.getAllMemories();
   for (const memory of remainingMemories) {
     const temporalAssocs = formTemporalAssociations(storage, memory, config, currentTime);
-    const semanticAssocs = formSemanticAssociations(storage, memory, currentTime, remainingMemories);
-    const emotionalAssocs = formEmotionalAssociations(storage, memory, currentTime, remainingMemories);
+    const semanticAssocs = formSemanticAssociations(
+      storage,
+      memory,
+      currentTime,
+      remainingMemories,
+    );
+    const emotionalAssocs = formEmotionalAssociations(
+      storage,
+      memory,
+      currentTime,
+      remainingMemories,
+    );
     const causalAssocs = formCausalAssociations(storage, memory, config, currentTime);
 
-    for (const assoc of [...temporalAssocs, ...semanticAssocs, ...emotionalAssocs, ...causalAssocs]) {
+    for (const assoc of [
+      ...temporalAssocs,
+      ...semanticAssocs,
+      ...emotionalAssocs,
+      ...causalAssocs,
+    ]) {
       result.associationsDiscovered++;
       result.discoveredAssociationPairs.push([assoc.sourceId, assoc.targetId]);
     }

@@ -1,10 +1,10 @@
 import type { CognitiveConfig } from "../config/defaults.ts";
 import type { EngramStorage } from "../storage/sqlite.ts";
-import type { Memory, EncodeInput } from "./memory.ts";
-import { generateMemoryId } from "./memory.ts";
-import { defaultEmotionWeight } from "./emotional-tag.ts";
 import { baseLevelActivation } from "./activation.ts";
 import { formEmotionalAssociations, formCausalAssociations } from "./associations.ts";
+import { defaultEmotionWeight } from "./emotional-tag.ts";
+import type { Memory, EncodeInput } from "./memory.ts";
+import { generateMemoryId } from "./memory.ts";
 
 export function encode(
   storage: EngramStorage,

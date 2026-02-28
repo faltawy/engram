@@ -1,7 +1,8 @@
 import { test, expect, describe, beforeEach, afterEach } from "bun:test";
-import { EngramStorage } from "../src/storage/sqlite.ts";
+
 import { generateId } from "../src/core/memory.ts";
 import type { Memory, Association } from "../src/core/memory.ts";
+import { EngramStorage } from "../src/storage/sqlite.ts";
 
 describe("EngramStorage", () => {
   let storage: EngramStorage;

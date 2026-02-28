@@ -32,7 +32,8 @@ export const AssociationType = {
   Emotional: "emotional",
   Causal: "causal",
 } as const;
-export type AssociationType = (typeof AssociationType)[keyof typeof AssociationType];
+export type AssociationType =
+  (typeof AssociationType)[keyof typeof AssociationType];
 
 export const AccessType = {
   Encode: "encode",

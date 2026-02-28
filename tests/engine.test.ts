@@ -1,6 +1,7 @@
 import { test, expect, describe } from "bun:test";
-import { EngramEngine } from "../src/core/engine.ts";
+
 import { DEFAULT_CONFIG } from "../src/config/defaults.ts";
+import { EngramEngine } from "../src/core/engine.ts";
 
 describe("EngramEngine", () => {
   test("inMemory() creates a working engine with default config", () => {
@@ -12,7 +13,10 @@ describe("EngramEngine", () => {
   });
 
   test("inMemory() accepts config overrides", () => {
-    const engine = EngramEngine.inMemory({ decayRate: 0.8, workingMemoryCapacity: 5 });
+    const engine = EngramEngine.inMemory({
+      decayRate: 0.8,
+      workingMemoryCapacity: 5,
+    });
     expect(engine.config.decayRate).toBe(0.8);
     expect(engine.config.workingMemoryCapacity).toBe(5);
     expect(engine.config.latencyFactor).toBe(DEFAULT_CONFIG.latencyFactor);

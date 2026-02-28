@@ -1,10 +1,12 @@
-import { defineCommand } from "citty";
 import { readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+
+import { defineCommand } from "citty";
 import { consola } from "consola";
-import { getProvider, availableProviders } from "../providers/index.ts";
+
 import { green, dim, yellow, bold } from "../format.ts";
+import { getProvider, availableProviders } from "../providers/index.ts";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SKILL_PATH = join(__dirname, "..", "..", "..", "SKILL.md");
@@ -96,16 +98,23 @@ export const installCommand = defineCommand({
     if (result.status === "already_installed") {
       console.log(dim("  already installed — nothing to do"));
       console.log(dim(`  skill: ${result.skillPath}`));
-      if (result.mcpConfigPath) console.log(dim(`  mcp:   ${result.mcpConfigPath}`));
+      if (result.mcpConfigPath)
+        console.log(dim(`  mcp:   ${result.mcpConfigPath}`));
       return;
     }
 
     const prefix = dryRun ? "would install" : "installed";
     const check = dryRun ? yellow("~") : green("\u2713");
 
-    console.log(`  ${check} Skill ${prefix} ${dim("\u2192")} ${bold(result.skillPath)}`);
+    console.log(
+      `  ${check} Skill ${prefix} ${dim("\u2192")} ${bold(result.skillPath)}`
+    );
     if (result.mcpConfigured && result.mcpConfigPath) {
-      console.log(`  ${check} MCP ${prefix}   ${dim("\u2192")} ${bold(result.mcpConfigPath)}`);
+      console.log(
+        `  ${check} MCP ${prefix}   ${dim("\u2192")} ${bold(
+          result.mcpConfigPath
+        )}`
+      );
     } else if (result.mcpConfigPath) {
       console.log(dim(`  - MCP already configured → ${result.mcpConfigPath}`));
     }

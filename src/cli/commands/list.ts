@@ -1,4 +1,5 @@
 import { defineCommand } from "citty";
+
 import { EngramEngine } from "../../core/engine.ts";
 import { isValidMemoryType } from "../../core/memory.ts";
 import { formatMemoryList } from "../format.ts";
@@ -32,7 +33,8 @@ export const listCommand = defineCommand({
   run({ args }) {
     const engine = EngramEngine.create();
     try {
-      const type = args.type && isValidMemoryType(args.type) ? args.type : undefined;
+      const type =
+        args.type && isValidMemoryType(args.type) ? args.type : undefined;
       const limit = Number(args.limit);
 
       let memories;

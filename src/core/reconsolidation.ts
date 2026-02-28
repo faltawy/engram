@@ -12,7 +12,7 @@ export function reconsolidate(
   storage: EngramStorage,
   memory: Memory,
   recallContext: ReconsolidationContext,
-  config: CognitiveConfig,
+  config: CognitiveConfig
 ): Memory {
   const blendRate = config.reconsolidationBlendRate;
 
@@ -24,7 +24,10 @@ export function reconsolidate(
     memory.context = recallContext.newContext;
   }
 
-  if (recallContext.currentEmotion && recallContext.currentEmotion !== memory.emotion) {
+  if (
+    recallContext.currentEmotion &&
+    recallContext.currentEmotion !== memory.emotion
+  ) {
     const blendedWeight =
       memory.emotionWeight * (1 - blendRate) +
       (recallContext.currentEmotionWeight ?? 0.5) * blendRate;

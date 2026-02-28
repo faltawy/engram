@@ -1,9 +1,16 @@
 import type { CognitiveConfig } from "../config/defaults.ts";
-import type { EngramStorage } from "../storage/sqlite.ts";
-import type { EngramEngine } from "../core/engine.ts";
-import { isValidMemoryType, MemoryType, Emotion } from "../core/memory.ts";
+import { discoverChunks } from "../core/chunking.ts";
+import { consolidate } from "../core/consolidation.ts";
+import { isValidEmotion } from "../core/emotional-tag.ts";
 import { encode } from "../core/encoder.ts";
+import type { EngramEngine } from "../core/engine.ts";
+import { refreshActivations } from "../core/forgetting.ts";
+import { isValidMemoryType, MemoryType, Emotion } from "../core/memory.ts";
 import { recall } from "../core/recall.ts";
+import {
+  reconsolidate,
+  type ReconsolidationContext,
+} from "../core/reconsolidation.ts";
 import {
   pushFocus,
   popFocus,
@@ -11,11 +18,7 @@ import {
   clearFocus,
   focusUtilization,
 } from "../core/working-memory.ts";
-import { consolidate } from "../core/consolidation.ts";
-import { discoverChunks } from "../core/chunking.ts";
-import { refreshActivations } from "../core/forgetting.ts";
-import { reconsolidate, type ReconsolidationContext } from "../core/reconsolidation.ts";
-import { isValidEmotion } from "../core/emotional-tag.ts";
+import type { EngramStorage } from "../storage/sqlite.ts";
 
 export interface ToolResult {
   [key: string]: unknown;
@@ -33,13 +36,23 @@ function errorResult(text: string): ToolResult {
 
 export function handleStore(
   engine: EngramEngine,
-  args: { action: string; [key: string]: unknown },
+  args: { action: string; [key: string]: unknown }
 ): ToolResult {
   switch (args.action) {
     case "encode":
-      return handleEncode(engine.storage, engine.config, args as any, engine.projectContext);
+      return handleEncode(
+        engine.storage,
+        engine.config,
+        args as any,
+        engine.projectContext
+      );
     case "encode_batch":
-      return handleEncodeBatch(engine.storage, engine.config, args as any, engine.projectContext);
+      return handleEncodeBatch(
+        engine.storage,
+        engine.config,
+        args as any,
+        engine.projectContext
+      );
     case "reconsolidate":
       return handleReconsolidate(engine.storage, engine.config, args as any);
     default:
@@ -49,12 +62,17 @@ export function handleStore(
 
 export function handleRecall(
   engine: EngramEngine,
-  args: { action?: string; [key: string]: unknown },
+  args: { action?: string; [key: string]: unknown }
 ): ToolResult {
   const action = args.action ?? "recall";
   switch (action) {
     case "recall":
-      return handleRecallQuery(engine.storage, engine.config, args as any, engine.projectContext);
+      return handleRecallQuery(
+        engine.storage,
+        engine.config,
+        args as any,
+        engine.projectContext
+      );
     case "inspect":
       return handleInspect(engine.storage, args as any);
     case "list":
@@ -68,7 +86,7 @@ export function handleRecall(
 
 export function handleManage(
   engine: EngramEngine,
-  args: { action: string; [key: string]: unknown },
+  args: { action: string; [key: string]: unknown }
 ): ToolResult {
   switch (args.action) {
     case "consolidate":
@@ -82,7 +100,12 @@ export function handleManage(
     case "focus_clear":
       return handleFocusClear(engine.storage);
     case "recall_to_focus":
-      return handleRecallToFocus(engine.storage, engine.config, args as any, engine.projectContext);
+      return handleRecallToFocus(
+        engine.storage,
+        engine.config,
+        args as any,
+        engine.projectContext
+      );
     default:
       return errorResult(`Unknown manage action: ${args.action}`);
   }
@@ -98,16 +121,24 @@ function handleEncode(
     emotionWeight?: number;
     context?: string;
   },
-  defaultContext?: string | null,
+  defaultContext?: string | null
 ): ToolResult {
   const typeStr = args.type ?? "semantic";
   if (!isValidMemoryType(typeStr)) {
-    return errorResult(`Invalid type '${typeStr}'. Valid: ${Object.values(MemoryType).join(", ")}`);
+    return errorResult(
+      `Invalid type '${typeStr}'. Valid: ${Object.values(MemoryType).join(
+        ", "
+      )}`
+    );
   }
 
   const emotionStr = args.emotion ?? "neutral";
   if (!isValidEmotion(emotionStr)) {
-    return errorResult(`Invalid emotion '${emotionStr}'. Valid: ${Object.values(Emotion).join(", ")}`);
+    return errorResult(
+      `Invalid emotion '${emotionStr}'. Valid: ${Object.values(Emotion).join(
+        ", "
+      )}`
+    );
   }
 
   const memory = encode(
@@ -119,7 +150,7 @@ function handleEncode(
       emotionWeight: args.emotionWeight,
       context: args.context ?? defaultContext ?? undefined,
     },
-    config,
+    config
   );
 
   return textResult(JSON.stringify({ id: memory.id }));
@@ -137,7 +168,7 @@ function handleEncodeBatch(
       context?: string;
     }>;
   },
-  defaultContext?: string | null,
+  defaultContext?: string | null
 ): ToolResult {
   const ids: string[] = [];
   const errors: string[] = [];
@@ -164,7 +195,7 @@ function handleEncodeBatch(
           emotionWeight: m.emotionWeight,
           context: m.context ?? defaultContext ?? undefined,
         },
-        config,
+        config
       );
       ids.push(memory.id);
     }
@@ -188,9 +219,10 @@ function handleRecallQuery(
     verbose?: boolean;
     format?: "full" | "content" | "ids";
   },
-  defaultContext?: string | null,
+  defaultContext?: string | null
 ): ToolResult {
-  const typeFilter = args.type && isValidMemoryType(args.type) ? args.type : undefined;
+  const typeFilter =
+    args.type && isValidMemoryType(args.type) ? args.type : undefined;
 
   const results = recall(storage, args.cue, config, {
     limit: args.limit ?? 5,
@@ -244,11 +276,12 @@ function handleList(
     offset?: number;
     format?: "full" | "content" | "ids";
   },
-  defaultContext?: string | null,
+  defaultContext?: string | null
 ): ToolResult {
   const limit = args.limit ?? 20;
   const offset = args.offset ?? 0;
-  const typeFilter = args.type && isValidMemoryType(args.type) ? args.type : undefined;
+  const typeFilter =
+    args.type && isValidMemoryType(args.type) ? args.type : undefined;
   const context = args.context ?? defaultContext ?? undefined;
 
   let results;
@@ -280,15 +313,15 @@ function handleList(
         type: m.type,
         context: m.context,
         activation: m.activation,
-      })),
-    ),
+      }))
+    )
   );
 }
 
 function handleFocusPush(
   storage: EngramStorage,
   config: CognitiveConfig,
-  args: { content: string; memoryRef?: string },
+  args: { content: string; memoryRef?: string }
 ): ToolResult {
   const { slot, evicted } = pushFocus(storage, args.content, config, {
     memoryRef: args.memoryRef,
@@ -298,8 +331,10 @@ function handleFocusPush(
     JSON.stringify({
       slot: slot.slot,
       content: slot.content,
-      evicted: evicted ? { slot: evicted.slot, content: evicted.content } : null,
-    }),
+      evicted: evicted
+        ? { slot: evicted.slot, content: evicted.content }
+        : null,
+    })
   );
 }
 
@@ -308,10 +343,15 @@ function handleFocusPop(storage: EngramStorage): ToolResult {
   if (!popped) {
     return textResult("Working memory is empty.");
   }
-  return textResult(JSON.stringify({ slot: popped.slot, content: popped.content }));
+  return textResult(
+    JSON.stringify({ slot: popped.slot, content: popped.content })
+  );
 }
 
-function handleFocusGet(storage: EngramStorage, config: CognitiveConfig): ToolResult {
+function handleFocusGet(
+  storage: EngramStorage,
+  config: CognitiveConfig
+): ToolResult {
   const slots = getFocus(storage);
   const { used, capacity } = focusUtilization(storage, config);
 
@@ -319,8 +359,12 @@ function handleFocusGet(storage: EngramStorage, config: CognitiveConfig): ToolRe
     JSON.stringify({
       used,
       capacity,
-      slots: slots.map((s) => ({ slot: s.slot, content: s.content, memoryRef: s.memoryRef })),
-    }),
+      slots: slots.map((s) => ({
+        slot: s.slot,
+        content: s.content,
+        memoryRef: s.memoryRef,
+      })),
+    })
   );
 }
 
@@ -333,9 +377,10 @@ function handleRecallToFocus(
   storage: EngramStorage,
   config: CognitiveConfig,
   args: { cue: string; limit?: number; type?: string; context?: string },
-  defaultContext?: string | null,
+  defaultContext?: string | null
 ): ToolResult {
-  const typeFilter = args.type && isValidMemoryType(args.type) ? args.type : undefined;
+  const typeFilter =
+    args.type && isValidMemoryType(args.type) ? args.type : undefined;
   const limit = args.limit ?? 3;
 
   const results = recall(storage, args.cue, config, {
@@ -357,7 +402,10 @@ function handleRecallToFocus(
   return textResult(JSON.stringify({ loaded, focus: { used, capacity } }));
 }
 
-function handleConsolidate(storage: EngramStorage, config: CognitiveConfig): ToolResult {
+function handleConsolidate(
+  storage: EngramStorage,
+  config: CognitiveConfig
+): ToolResult {
   const result = consolidate(storage, config);
   const chunks = discoverChunks(storage, config);
 
@@ -370,11 +418,14 @@ function handleConsolidate(storage: EngramStorage, config: CognitiveConfig): Too
       chunksFormed: chunks.length,
       extractedFacts: result.extractedFacts,
       prunedIds: result.prunedIds,
-    }),
+    })
   );
 }
 
-function handleStats(storage: EngramStorage, config: CognitiveConfig): ToolResult {
+function handleStats(
+  storage: EngramStorage,
+  config: CognitiveConfig
+): ToolResult {
   const { atRisk } = refreshActivations(storage, config);
   const { used, capacity } = focusUtilization(storage, config);
   const lastConsolidation = storage.getLastConsolidation();
@@ -394,13 +445,18 @@ function handleStats(storage: EngramStorage, config: CognitiveConfig): ToolResul
             memoriesPruned: lastConsolidation.memoriesPruned,
           }
         : null,
-    }),
+    })
   );
 }
 
-function handleInspect(storage: EngramStorage, args: { id: string }): ToolResult {
+function handleInspect(
+  storage: EngramStorage,
+  args: { id: string }
+): ToolResult {
   const allMemories = storage.getAllMemories();
-  const match = allMemories.find((m) => m.id === args.id || m.id.startsWith(args.id));
+  const match = allMemories.find(
+    (m) => m.id === args.id || m.id.startsWith(args.id)
+  );
 
   if (!match) {
     return errorResult(`No memory found matching "${args.id}".`);
@@ -431,14 +487,19 @@ function handleInspect(storage: EngramStorage, args: { id: string }): ToolResult
         strength: a.strength,
         type: a.type,
       })),
-    }),
+    })
   );
 }
 
 function handleReconsolidate(
   storage: EngramStorage,
   config: CognitiveConfig,
-  args: { id: string; newContext?: string; currentEmotion?: string; currentEmotionWeight?: number },
+  args: {
+    id: string;
+    newContext?: string;
+    currentEmotion?: string;
+    currentEmotionWeight?: number;
+  }
 ): ToolResult {
   const memory = storage.getMemory(args.id);
   if (!memory) {
@@ -446,7 +507,9 @@ function handleReconsolidate(
   }
 
   const validEmotion =
-    args.currentEmotion && isValidEmotion(args.currentEmotion) ? args.currentEmotion : undefined;
+    args.currentEmotion && isValidEmotion(args.currentEmotion)
+      ? args.currentEmotion
+      : undefined;
 
   const context: ReconsolidationContext = {
     newContext: args.newContext,
@@ -461,6 +524,6 @@ function handleReconsolidate(
       id: updated.id,
       context: updated.context,
       reconsolidationCount: updated.reconsolidationCount,
-    }),
+    })
   );
 }

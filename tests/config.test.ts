@@ -1,4 +1,5 @@
 import { test, expect, describe, afterEach } from "bun:test";
+
 import { DEFAULT_CONFIG, loadConfig, resolveDbPath } from "../src/config/defaults.ts";
 
 describe("resolveDbPath", () => {

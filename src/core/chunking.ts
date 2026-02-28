@@ -62,7 +62,10 @@ class UnionFind {
   }
 }
 
-export function discoverChunks(storage: EngramStorage, config: CognitiveConfig): Chunk[] {
+export function discoverChunks(
+  storage: EngramStorage,
+  config: CognitiveConfig
+): Chunk[] {
   const allMemories = storage.getAllMemories();
   const memoryMap = new Map<string, Memory>();
   const uf = new UnionFind();
@@ -77,7 +80,8 @@ export function discoverChunks(storage: EngramStorage, config: CognitiveConfig):
     const associations = storage.getAssociations(memory.id);
     for (const assoc of associations) {
       if (assoc.strength < config.chunkingSimilarityThreshold) continue;
-      const otherId = assoc.sourceId === memory.id ? assoc.targetId : assoc.sourceId;
+      const otherId =
+        assoc.sourceId === memory.id ? assoc.targetId : assoc.sourceId;
       if (!memoryMap.has(otherId)) continue;
       uf.union(memory.id, otherId);
     }
@@ -89,7 +93,10 @@ export function discoverChunks(storage: EngramStorage, config: CognitiveConfig):
 
     const members = memberIds.map((id) => memoryMap.get(id)!);
     const chunkId = generateId();
-    const keywords = extractKeywords(members.map((m) => m.content).join(" "), 3);
+    const keywords = extractKeywords(
+      members.map((m) => m.content).join(" "),
+      3
+    );
     const label = keywords.join(" + ") || "chunk";
 
     for (const member of members) {
@@ -103,6 +110,9 @@ export function discoverChunks(storage: EngramStorage, config: CognitiveConfig):
   return chunks;
 }
 
-export function getChunkMembers(storage: EngramStorage, chunkId: string): Memory[] {
+export function getChunkMembers(
+  storage: EngramStorage,
+  chunkId: string
+): Memory[] {
   return storage.getAllMemories().filter((m) => m.chunkId === chunkId);
 }

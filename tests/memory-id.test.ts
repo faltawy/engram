@@ -1,8 +1,9 @@
 import { test, expect, describe } from "bun:test";
-import { generateMemoryId, generateId } from "../src/core/memory.ts";
-import { encode } from "../src/core/encoder.ts";
-import { EngramStorage } from "../src/storage/sqlite.ts";
+
 import { DEFAULT_CONFIG } from "../src/config/defaults.ts";
+import { encode } from "../src/core/encoder.ts";
+import { generateMemoryId, generateId } from "../src/core/memory.ts";
+import { EngramStorage } from "../src/storage/sqlite.ts";
 
 describe("generateMemoryId", () => {
   test("produces format {type}:{slug}:{hash}", () => {
@@ -25,7 +26,8 @@ describe("generateMemoryId", () => {
   });
 
   test("slug is max 30 chars", () => {
-    const longContent = "this is a very long content string that should be truncated to fit within the slug limit";
+    const longContent =
+      "this is a very long content string that should be truncated to fit within the slug limit";
     const id = generateMemoryId(longContent, "semantic");
     const slug = id.split(":")[1]!;
     expect(slug.length).toBeLessThanOrEqual(30);
@@ -75,11 +77,7 @@ describe("encoded memories use self-descriptive IDs", () => {
     const storage = EngramStorage.inMemory();
     const config = { ...DEFAULT_CONFIG, activationNoise: 0 };
 
-    const memory = encode(
-      storage,
-      { content: "meeting with client", type: "episodic" },
-      config,
-    );
+    const memory = encode(storage, { content: "meeting with client", type: "episodic" }, config);
 
     expect(memory.id.startsWith("epi:")).toBe(true);
     storage.close();

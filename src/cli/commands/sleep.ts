@@ -1,13 +1,15 @@
 import { defineCommand } from "citty";
-import { EngramEngine } from "../../core/engine.ts";
-import { consolidate } from "../../core/consolidation.ts";
+
 import { discoverChunks } from "../../core/chunking.ts";
+import { consolidate } from "../../core/consolidation.ts";
+import { EngramEngine } from "../../core/engine.ts";
 import { bold, dim, green, cyan, isInteractive } from "../format.ts";
 
 export const sleepCommand = defineCommand({
   meta: {
     name: "sleep",
-    description: "Run consolidation cycle (replay, strengthen, prune, extract, link)",
+    description:
+      "Run consolidation cycle (replay, strengthen, prune, extract, link)",
   },
   args: {
     report: {
@@ -41,7 +43,7 @@ export const sleepCommand = defineCommand({
                   })),
                 }
               : {}),
-          }),
+          })
         );
         return;
       }
@@ -49,17 +51,29 @@ export const sleepCommand = defineCommand({
       console.log(dim("  Running consolidation cycle...\n"));
       console.log(green("  Consolidation complete:\n"));
       console.log(
-        `  ${cyan("Strengthened")} ${result.memoriesStrengthened} frequently-accessed memories`,
+        `  ${cyan("Strengthened")} ${
+          result.memoriesStrengthened
+        } frequently-accessed memories`
       );
       console.log(
-        `  ${cyan("Pruned")}       ${result.memoriesPruned} memories below activation threshold`,
+        `  ${cyan("Pruned")}       ${
+          result.memoriesPruned
+        } memories below activation threshold`
       );
       console.log(
-        `  ${cyan("Extracted")}    ${result.factsExtracted} semantic facts from episodic patterns`,
+        `  ${cyan("Extracted")}    ${
+          result.factsExtracted
+        } semantic facts from episodic patterns`
       );
-      console.log(`  ${cyan("Discovered")}   ${result.associationsDiscovered} new associations`);
+      console.log(
+        `  ${cyan("Discovered")}   ${
+          result.associationsDiscovered
+        } new associations`
+      );
       if (chunks.length > 0) {
-        console.log(`  ${cyan("Chunked")}      ${chunks.length} new memory groups`);
+        console.log(
+          `  ${cyan("Chunked")}      ${chunks.length} new memory groups`
+        );
       }
 
       if (args.report) {
@@ -84,14 +98,20 @@ export const sleepCommand = defineCommand({
         if (chunks.length > 0) {
           console.log(bold("  New Chunks:"));
           for (const chunk of chunks) {
-            console.log(`    ${dim(">")} ${chunk.label} (${chunk.memberIds.length} memories)`);
+            console.log(
+              `    ${dim(">")} ${chunk.label} (${
+                chunk.memberIds.length
+              } memories)`
+            );
           }
           console.log("");
         }
 
         if (result.discoveredAssociationPairs.length > 0) {
           console.log(
-            bold(`  Associations Discovered: ${result.discoveredAssociationPairs.length}`),
+            bold(
+              `  Associations Discovered: ${result.discoveredAssociationPairs.length}`
+            )
           );
         }
       }

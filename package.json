@@ -2,16 +2,20 @@
   "name": "@cogmem/engram",
   "version": "0.3.0",
   "description": "Human memory for artificial minds — a cognitive memory system modeled on neuroscience",
-  "type": "module",
-  "exports": {
-    ".": {
-      "bun": "./src/index.ts",
-      "types": "./src/index.ts",
-      "default": "./src/index.ts"
-    }
+  "keywords": [
+    "agents",
+    "ai",
+    "bun",
+    "cognitive",
+    "mcp",
+    "memory",
+    "neuroscience"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/faltawy/engram.git"
   },
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
   "bin": {
     "engram": "src/cli/index.ts",
     "engram-mcp": "src/mcp/server.ts"
@@ -21,6 +25,19 @@
     "drizzle/",
     "SKILL.md"
   ],
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "bun": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "start": "bun run src/cli/index.ts",
     "test": "bun test",
@@ -51,23 +68,6 @@
   "peerDependencies": {
     "typescript": "^5"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/faltawy/engram.git"
-  },
-  "keywords": [
-    "memory",
-    "ai",
-    "agents",
-    "cognitive",
-    "mcp",
-    "bun",
-    "neuroscience"
-  ],
-  "publishConfig": {
-    "access": "public"
-  },
-  "license": "MIT",
   "engines": {
     "bun": ">=1.0.0"
   }

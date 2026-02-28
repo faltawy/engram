@@ -1,8 +1,9 @@
 import { test, expect, describe } from "bun:test";
+
+import { DEFAULT_CONFIG } from "../src/config/defaults.ts";
+import { encode } from "../src/core/encoder.ts";
 import { tokenize, extractKeywords } from "../src/core/search.ts";
 import { EngramStorage } from "../src/storage/sqlite.ts";
-import { encode } from "../src/core/encoder.ts";
-import { DEFAULT_CONFIG } from "../src/config/defaults.ts";
 
 describe("tokenize", () => {
   test("lowercases and splits on non-alphanumeric", () => {

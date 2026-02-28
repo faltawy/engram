@@ -1,8 +1,9 @@
-import type { Memory, RecallResult } from "../core/memory.ts";
-import kleur from "kleur";
 import Table from "cli-table3";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime.js";
+import kleur from "kleur";
+
+import type { Memory, RecallResult } from "../core/memory.ts";
 
 dayjs.extend(relativeTime);
 

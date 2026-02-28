@@ -1,8 +1,9 @@
 import { defineCommand } from "citty";
+
 import { EngramEngine } from "../../core/engine.ts";
+import { isValidMemoryType } from "../../core/memory.ts";
 import { recall } from "../../core/recall.ts";
 import { formatRecallResults } from "../format.ts";
-import { isValidMemoryType } from "../../core/memory.ts";
 
 export const recallCommand = defineCommand({
   meta: {
@@ -38,7 +39,8 @@ export const recallCommand = defineCommand({
   run({ args }) {
     const engine = EngramEngine.create();
     try {
-      const typeFilter = args.type && isValidMemoryType(args.type) ? args.type : undefined;
+      const typeFilter =
+        args.type && isValidMemoryType(args.type) ? args.type : undefined;
 
       const results = recall(engine.storage, args.cue, engine.config, {
         type: typeFilter,

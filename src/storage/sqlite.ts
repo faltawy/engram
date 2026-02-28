@@ -1,9 +1,15 @@
 import { Database } from "bun:sqlite";
+import { mkdirSync, existsSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+
+import { eq, and, gt, lt, or, desc, asc, count, sql } from "drizzle-orm";
 import { drizzle, type BunSQLiteDatabase } from "drizzle-orm/bun-sqlite";
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
-import { eq, and, gt, lt, or, desc, asc, count, sql } from "drizzle-orm";
-import { memories, accessLog, associations, workingMemory, consolidationLog } from "./schema.ts";
+
+import { resolveDbPath } from "../config/defaults.ts";
 import type { MemoryType, AccessType } from "../core/memory.ts";
+import { generateId } from "../core/memory.ts";
+import { memories, accessLog, associations, workingMemory, consolidationLog } from "./schema.ts";
 import type {
   Memory,
   AccessLogEntry,
@@ -11,11 +17,6 @@ import type {
   WorkingMemorySlot,
   ConsolidationLog,
 } from "./schema.ts";
-import { generateId } from "../core/memory.ts";
-import { resolveDbPath } from "../config/defaults.ts";
-import { mkdirSync, existsSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-
 import * as schema from "./schema.ts";
 
 export class EngramStorage {

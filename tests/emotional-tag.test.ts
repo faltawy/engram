@@ -1,4 +1,5 @@
 import { test, expect, describe } from "bun:test";
+
 import { defaultEmotionWeight, isValidEmotion } from "../src/core/emotional-tag.ts";
 import { Emotion } from "../src/core/memory.ts";
 

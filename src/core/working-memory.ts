@@ -6,7 +6,7 @@ export function pushFocus(
   storage: EngramStorage,
   content: string,
   config: CognitiveConfig,
-  options?: { memoryRef?: string; now?: number },
+  options?: { memoryRef?: string; now?: number }
 ): { slot: WorkingMemorySlot; evicted: WorkingMemorySlot | null } {
   const now = options?.now ?? Date.now();
   const currentSlots = storage.getWorkingMemory();
@@ -14,7 +14,9 @@ export function pushFocus(
   let evicted: WorkingMemorySlot | null = null;
 
   if (currentSlots.length >= config.workingMemoryCapacity) {
-    const oldest = currentSlots.reduce((min, s) => (s.pushedAt < min.pushedAt ? s : min));
+    const oldest = currentSlots.reduce((min, s) =>
+      s.pushedAt < min.pushedAt ? s : min
+    );
     evicted = oldest;
     storage.removeWorkingMemorySlot(oldest.slot);
   }
@@ -38,7 +40,9 @@ export function popFocus(storage: EngramStorage): WorkingMemorySlot | null {
   const slots = storage.getWorkingMemory();
   if (slots.length === 0) return null;
 
-  const newest = slots.reduce((max, s) => (s.pushedAt > max.pushedAt ? s : max));
+  const newest = slots.reduce((max, s) =>
+    s.pushedAt > max.pushedAt ? s : max
+  );
 
   storage.removeWorkingMemorySlot(newest.slot);
   return newest;
@@ -63,7 +67,7 @@ export function getWorkingMemoryIds(storage: EngramStorage): string[] {
 
 export function focusUtilization(
   storage: EngramStorage,
-  config: CognitiveConfig,
+  config: CognitiveConfig
 ): { used: number; capacity: number; utilization: number } {
   const used = storage.getWorkingMemoryCount();
   return {

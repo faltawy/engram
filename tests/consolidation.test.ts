@@ -1,13 +1,14 @@
 import { test, expect, describe } from "bun:test";
-import { EngramStorage } from "../src/storage/sqlite.ts";
-import { encode } from "../src/core/encoder.ts";
-import { recall } from "../src/core/recall.ts";
-import { consolidate } from "../src/core/consolidation.ts";
-import { discoverChunks, getChunkMembers } from "../src/core/chunking.ts";
-import { encodeProcedural, getSkills } from "../src/core/procedural-store.ts";
-import { formAssociation } from "../src/core/associations.ts";
-import { baseLevelActivation } from "../src/core/activation.ts";
+
 import { DEFAULT_CONFIG, type CognitiveConfig } from "../src/config/defaults.ts";
+import { baseLevelActivation } from "../src/core/activation.ts";
+import { formAssociation } from "../src/core/associations.ts";
+import { discoverChunks, getChunkMembers } from "../src/core/chunking.ts";
+import { consolidate } from "../src/core/consolidation.ts";
+import { encode } from "../src/core/encoder.ts";
+import { encodeProcedural, getSkills } from "../src/core/procedural-store.ts";
+import { recall } from "../src/core/recall.ts";
+import { EngramStorage } from "../src/storage/sqlite.ts";
 
 const config: CognitiveConfig = { ...DEFAULT_CONFIG, activationNoise: 0 };
 
@@ -31,9 +32,18 @@ describe("Consolidation Effects", () => {
     );
 
     // Recall it 3 times within 24h to make it "frequently accessed"
-    recall(storage, "deployment checklist", config, { deterministic: true, now: now + 1000 });
-    recall(storage, "deployment checklist", config, { deterministic: true, now: now + 2000 });
-    recall(storage, "deployment checklist", config, { deterministic: true, now: now + 3000 });
+    recall(storage, "deployment checklist", config, {
+      deterministic: true,
+      now: now + 1000,
+    });
+    recall(storage, "deployment checklist", config, {
+      deterministic: true,
+      now: now + 2000,
+    });
+    recall(storage, "deployment checklist", config, {
+      deterministic: true,
+      now: now + 3000,
+    });
 
     const beforeConsolidation = storage.getAccessTimestamps(mem.id).length;
 

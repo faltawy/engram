@@ -1,9 +1,10 @@
 import { test, expect, describe } from "bun:test";
-import { EngramStorage } from "../../src/storage/sqlite.ts";
+
+import { DEFAULT_CONFIG, type CognitiveConfig } from "../../src/config/defaults.ts";
+import { consolidate } from "../../src/core/consolidation.ts";
 import { encode } from "../../src/core/encoder.ts";
 import { recall } from "../../src/core/recall.ts";
-import { consolidate } from "../../src/core/consolidation.ts";
-import { DEFAULT_CONFIG, type CognitiveConfig } from "../../src/config/defaults.ts";
+import { EngramStorage } from "../../src/storage/sqlite.ts";
 import { generateCorpus, mrr, measureMs } from "./helpers.ts";
 
 const config: CognitiveConfig = {
@@ -21,28 +22,41 @@ describe("Memory Pressure", () => {
     const storage = makeStorage();
     const now = 1000000000;
     const day = 86400000;
-    const pressureConfig: CognitiveConfig = { ...config, pruningThreshold: -5.5 };
+    const pressureConfig: CognitiveConfig = {
+      ...config,
+      pruningThreshold: -5.5,
+    };
 
     const importantIds: string[] = [];
     const fillerIds: string[] = [];
 
     for (let i = 0; i < 180; i++) {
-      const mem = encode(storage, {
-        content: `routine filler memory number ${i} about daily standup notes`,
-        type: "episodic",
-        context: "project:filler",
-      }, pressureConfig, now + i * 100);
+      const mem = encode(
+        storage,
+        {
+          content: `routine filler memory number ${i} about daily standup notes`,
+          type: "episodic",
+          context: "project:filler",
+        },
+        pressureConfig,
+        now + i * 100,
+      );
       fillerIds.push(mem.id);
     }
 
     for (let i = 0; i < 20; i++) {
-      const mem = encode(storage, {
-        content: `critical important memory ${i} about production incident resolution`,
-        type: "episodic",
-        context: "project:important",
-        emotion: "anxiety",
-        emotionWeight: 0.7,
-      }, pressureConfig, now + 18000 + i * 100);
+      const mem = encode(
+        storage,
+        {
+          content: `critical important memory ${i} about production incident resolution`,
+          type: "episodic",
+          context: "project:important",
+          emotion: "anxiety",
+          emotionWeight: 0.7,
+        },
+        pressureConfig,
+        now + 18000 + i * 100,
+      );
       importantIds.push(mem.id);
       storage.logAccess(mem.id, "recall", now + day * 5);
       storage.logAccess(mem.id, "recall", now + day * 15);
@@ -55,7 +69,11 @@ describe("Memory Pressure", () => {
     const survivingImportant = importantIds.filter((id) => storage.getMemory(id) !== null);
     const survivingFiller = fillerIds.filter((id) => storage.getMemory(id) !== null);
 
-    console.log(`[Memory Pressure] Pruned ${180 - survivingFiller.length} of 180 filler, preserved ${survivingImportant.length}/20 important`);
+    console.log(
+      `[Memory Pressure] Pruned ${
+        180 - survivingFiller.length
+      } of 180 filler, preserved ${survivingImportant.length}/20 important`,
+    );
 
     expect(survivingImportant.length).toBe(20);
     expect(survivingFiller.length).toBeLessThan(180);
@@ -65,36 +83,54 @@ describe("Memory Pressure", () => {
     const storage = makeStorage();
     const now = 1000000000;
     const day = 86400000;
-    const pressureConfig: CognitiveConfig = { ...config, pruningThreshold: -5.0 };
+    const pressureConfig: CognitiveConfig = {
+      ...config,
+      pruningThreshold: -5.0,
+    };
 
     const proceduralIds: string[] = [];
     const episodicIds: string[] = [];
     const semanticIds: string[] = [];
 
     for (let i = 0; i < 100; i++) {
-      const mem = encode(storage, {
-        content: `episodic filler event number ${i} from daily work log`,
-        type: "episodic",
-        context: "project:work",
-      }, pressureConfig, now + i * 100);
+      const mem = encode(
+        storage,
+        {
+          content: `episodic filler event number ${i} from daily work log`,
+          type: "episodic",
+          context: "project:work",
+        },
+        pressureConfig,
+        now + i * 100,
+      );
       episodicIds.push(mem.id);
     }
 
     for (let i = 0; i < 30; i++) {
-      const mem = encode(storage, {
-        content: `semantic knowledge fact ${i} about system architecture`,
-        type: "semantic",
-        context: "project:arch",
-      }, pressureConfig, now + 10000 + i * 100);
+      const mem = encode(
+        storage,
+        {
+          content: `semantic knowledge fact ${i} about system architecture`,
+          type: "semantic",
+          context: "project:arch",
+        },
+        pressureConfig,
+        now + 10000 + i * 100,
+      );
       semanticIds.push(mem.id);
     }
 
     for (let i = 0; i < 20; i++) {
-      const mem = encode(storage, {
-        content: `procedural skill ${i} for deployment rollback procedure`,
-        type: "procedural",
-        context: "project:ops",
-      }, pressureConfig, now + 13000 + i * 100);
+      const mem = encode(
+        storage,
+        {
+          content: `procedural skill ${i} for deployment rollback procedure`,
+          type: "procedural",
+          context: "project:ops",
+        },
+        pressureConfig,
+        now + 13000 + i * 100,
+      );
       proceduralIds.push(mem.id);
     }
 
@@ -103,7 +139,9 @@ describe("Memory Pressure", () => {
 
     const survivingProcedural = proceduralIds.filter((id) => storage.getMemory(id) !== null);
 
-    console.log(`[Memory Pressure] Procedural: ${survivingProcedural.length}/20 survived after 60 days`);
+    console.log(
+      `[Memory Pressure] Procedural: ${survivingProcedural.length}/20 survived after 60 days`,
+    );
 
     expect(survivingProcedural.length).toBe(20);
   });
@@ -112,17 +150,25 @@ describe("Memory Pressure", () => {
     const storage = makeStorage();
     const now = 1000000000;
     const day = 86400000;
-    const pressureConfig: CognitiveConfig = { ...config, pruningThreshold: -6.5 };
+    const pressureConfig: CognitiveConfig = {
+      ...config,
+      pruningThreshold: -6.5,
+    };
 
     const accessedIds: string[] = [];
     const neglectedIds: string[] = [];
 
     for (let i = 0; i < 100; i++) {
-      const mem = encode(storage, {
-        content: `memory item number ${i} about various engineering topics`,
-        type: "episodic",
-        context: "project:general",
-      }, pressureConfig, now + i * 100);
+      const mem = encode(
+        storage,
+        {
+          content: `memory item number ${i} about various engineering topics`,
+          type: "episodic",
+          context: "project:general",
+        },
+        pressureConfig,
+        now + i * 100,
+      );
 
       if (i < 10) {
         accessedIds.push(mem.id);
@@ -139,7 +185,9 @@ describe("Memory Pressure", () => {
     const survivingAccessed = accessedIds.filter((id) => storage.getMemory(id) !== null);
     const survivingNeglected = neglectedIds.filter((id) => storage.getMemory(id) !== null);
 
-    console.log(`[Memory Pressure] Accessed: ${survivingAccessed.length}/10, Neglected: ${survivingNeglected.length}/90`);
+    console.log(
+      `[Memory Pressure] Accessed: ${survivingAccessed.length}/10, Neglected: ${survivingNeglected.length}/90`,
+    );
 
     expect(survivingAccessed.length).toBe(10);
     expect(survivingNeglected.length).toBeLessThan(90);
@@ -223,7 +271,9 @@ describe("Stress Testing", () => {
         now: now + 50100,
         limit: 10,
       });
-      const retrievedIndices = results.map((r) => memoryIds.indexOf(r.memory.id)).filter((i) => i >= 0);
+      const retrievedIndices = results
+        .map((r) => memoryIds.indexOf(r.memory.id))
+        .filter((i) => i >= 0);
       const relevant = corpus
         .map((m, i) => ({ m, i }))
         .filter(({ m }) => cue.split(" ").some((w) => m.content.includes(w)))
@@ -273,7 +323,11 @@ describe("Consolidation at Scale", () => {
       result = consolidate(storage, config, now + 10100);
     });
 
-    console.log(`[Consolidation] 100 memories: ${elapsed.toFixed(1)}ms, associations: ${result!.associationsDiscovered}`);
+    console.log(
+      `[Consolidation] 100 memories: ${elapsed.toFixed(1)}ms, associations: ${
+        result!.associationsDiscovered
+      }`,
+    );
     expect(elapsed).toBeLessThan(3000);
     expect(result!.associationsDiscovered).toBeGreaterThan(0);
 
@@ -294,7 +348,11 @@ describe("Consolidation at Scale", () => {
       result = consolidate(storage, config, now + 25100);
     });
 
-    console.log(`[Consolidation] 250 memories: ${elapsed.toFixed(1)}ms, associations: ${result!.associationsDiscovered}`);
+    console.log(
+      `[Consolidation] 250 memories: ${elapsed.toFixed(1)}ms, associations: ${
+        result!.associationsDiscovered
+      }`,
+    );
     expect(elapsed).toBeLessThan(8000);
 
     storage.close();
@@ -323,7 +381,9 @@ describe("Association Graph Properties", () => {
     const sorted = [...fanCounts].sort((a, b) => a - b);
     const median = sorted[Math.floor(sorted.length / 2)]!;
 
-    console.log(`[Graph] Fan count: min=${min}, max=${max}, mean=${mean.toFixed(1)}, median=${median}`);
+    console.log(
+      `[Graph] Fan count: min=${min}, max=${max}, mean=${mean.toFixed(1)}, median=${median}`,
+    );
 
     expect(max).toBeLessThan(100);
     expect(mean).toBeGreaterThan(2);

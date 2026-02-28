@@ -31,6 +31,7 @@ engram install --provider claude --global --dry-run  # preview without writing f
 ```
 
 This installs two things:
+
 1. **SKILL.md** — a cognitive protocol that teaches agents how to use engram effectively
 2. **MCP config** — adds the engram server to your editor's MCP settings
 
@@ -42,12 +43,12 @@ engram is built on memory research. Every design decision traces back to how the
 
 The brain has distinct memory systems with different properties:
 
-| System | Brain Region | Duration | engram Mapping |
-|---|---|---|---|
-| **Working Memory** | Prefrontal Cortex | Seconds | `engram focus` — capacity-limited buffer (Miller's Law: 7 ± 2 items) |
-| **Episodic Memory** | Hippocampus → Neocortex | Minutes to lifetime | Contextual experiences — the *what, when, where, how it felt* |
-| **Semantic Memory** | Neocortex | Very long-term | Facts and concepts, detached from when you learned them |
-| **Procedural Memory** | Basal Ganglia | Lifetime | Skills and habits — immune to decay, expressed through action |
+| System                | Brain Region            | Duration            | engram Mapping                                                       |
+| --------------------- | ----------------------- | ------------------- | -------------------------------------------------------------------- |
+| **Working Memory**    | Prefrontal Cortex       | Seconds             | `engram focus` — capacity-limited buffer (Miller's Law: 7 ± 2 items) |
+| **Episodic Memory**   | Hippocampus → Neocortex | Minutes to lifetime | Contextual experiences — the _what, when, where, how it felt_        |
+| **Semantic Memory**   | Neocortex               | Very long-term      | Facts and concepts, detached from when you learned them              |
+| **Procedural Memory** | Basal Ganglia           | Lifetime            | Skills and habits — immune to decay, expressed through action        |
 
 ### ACT-R Activation Model
 
@@ -93,7 +94,7 @@ When one memory is activated, activation spreads along associative links to rela
 S_ji = S - ln(fan_j)
 ```
 
-Memories with many connections receive *less* boost from each (diffusion). Specific cues work better than generic ones.
+Memories with many connections receive _less_ boost from each (diffusion). Specific cues work better than generic ones.
 
 ### Consolidation (Sleep)
 
@@ -188,11 +189,11 @@ The easiest way is `engram install` (see above). To configure manually, add to y
 
 ### Available Tools
 
-| Tool | Description |
-|---|---|
-| `memory_store` | Encode new memories or reconsolidate existing ones |
+| Tool            | Description                                             |
+| --------------- | ------------------------------------------------------- |
+| `memory_store`  | Encode new memories or reconsolidate existing ones      |
 | `memory_recall` | Cue-based retrieval, memory inspection, or system stats |
-| `memory_manage` | Run consolidation or manage working memory |
+| `memory_manage` | Run consolidation or manage working memory              |
 
 ## Programmatic API
 
@@ -202,11 +203,15 @@ import { EngramEngine, encode, recall, consolidate } from "engram";
 const engine = EngramEngine.inMemory();
 
 // Encode
-const memory = encode(engine.storage, {
-  content: "important fact",
-  type: "semantic",
-  emotion: "curiosity",
-}, engine.config);
+const memory = encode(
+  engine.storage,
+  {
+    content: "important fact",
+    type: "semantic",
+    emotion: "curiosity",
+  },
+  engine.config,
+);
 
 // Recall
 const results = recall(engine.storage, "important", engine.config);
@@ -221,12 +226,12 @@ engine.close();
 
 Cognitive parameters can be tuned via environment variables or the `loadConfig()` function:
 
-| Parameter | Default | Env Variable | Description |
-|---|---|---|---|
-| `decayRate` | 0.5 | `ENGRAM_DECAY_RATE` | ACT-R power law decay parameter |
-| `retrievalThreshold` | -1.0 | `ENGRAM_RETRIEVAL_THRESHOLD` | Minimum activation for recall |
-| `workingMemoryCapacity` | 7 | `ENGRAM_WM_CAPACITY` | Miller's Law capacity limit |
-| `dbPath` | `~/.engram/memory.db` | `ENGRAM_DB_PATH` | SQLite database location |
+| Parameter               | Default               | Env Variable                 | Description                     |
+| ----------------------- | --------------------- | ---------------------------- | ------------------------------- |
+| `decayRate`             | 0.5                   | `ENGRAM_DECAY_RATE`          | ACT-R power law decay parameter |
+| `retrievalThreshold`    | -1.0                  | `ENGRAM_RETRIEVAL_THRESHOLD` | Minimum activation for recall   |
+| `workingMemoryCapacity` | 7                     | `ENGRAM_WM_CAPACITY`         | Miller's Law capacity limit     |
+| `dbPath`                | `~/.engram/memory.db` | `ENGRAM_DB_PATH`             | SQLite database location        |
 
 All parameters are also configurable programmatically:
 
@@ -242,8 +247,8 @@ const engine = new EngramEngine({
 
 ## References
 
-- Anderson, J.R. (1993). *Rules of the Mind*. ACT-R Cognitive Architecture.
-- Ebbinghaus, H. (1885). *Uber das Gedachtnis*. Memory and forgetting curves.
+- Anderson, J.R. (1993). _Rules of the Mind_. ACT-R Cognitive Architecture.
+- Ebbinghaus, H. (1885). _Uber das Gedachtnis_. Memory and forgetting curves.
 - Collins, A.M. & Loftus, E.F. (1975). A spreading-activation theory of semantic processing.
 - Nader, K., Schafe, G.E. & Le Doux, J.E. (2000). Fear memories require protein synthesis in the amygdala for reconsolidation after retrieval.
 - Miller, G.A. (1956). The magical number seven, plus or minus two.
