@@ -9,6 +9,7 @@ import { statsCommand } from "./commands/stats.ts";
 import { listCommand } from "./commands/list.ts";
 import { sleepCommand } from "./commands/sleep.ts";
 import { healthCommand } from "./commands/health.ts";
+import { installCommand } from "./commands/install.ts";
 
 const main = defineCommand({
   meta: {
@@ -25,6 +26,7 @@ const main = defineCommand({
     stats: statsCommand,
     sleep: sleepCommand,
     health: healthCommand,
+    install: installCommand,
   },
 });
 
