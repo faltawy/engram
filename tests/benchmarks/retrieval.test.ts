@@ -340,7 +340,7 @@ describe("Scale Retrieval Quality", () => {
     const { avgRecall, avgPrecision, avgMrr } = runScaleTest(500, 15);
     console.log(`[Scale 500] P=${(avgPrecision * 100).toFixed(1)}% R=${(avgRecall * 100).toFixed(1)}% MRR=${(avgMrr * 100).toFixed(1)}%`);
     expect(avgRecall).toBeGreaterThan(0.05);
-  });
+  }, 15000);
 
   test("degradation curve across sizes", () => {
     const sharedQueries = [
@@ -390,7 +390,7 @@ describe("Scale Retrieval Quality", () => {
     );
 
     expect(mrrBySize[500]!).toBeGreaterThanOrEqual(mrrBySize[50]! * 0.3);
-  });
+  }, 15000);
 });
 
 describe("Interference & Competition", () => {

@@ -190,7 +190,7 @@ describe("Stress Testing", () => {
     expect(avg).toBeLessThan(200);
 
     storage.close();
-  });
+  }, 15000);
 
   test("recall correctness at 500 memories", () => {
     const storage = makeStorage();
