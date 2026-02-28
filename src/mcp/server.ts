@@ -62,7 +62,7 @@ server.registerTool(
     description: `Actions: recall(cue) — cue-based retrieval | list — browse without activation effects | inspect(id) — full lifecycle | stats — system overview. Optional: limit, type, context, format, verbose.`,
     inputSchema: z.discriminatedUnion("action", [
       z.object({
-        action: z.literal("recall").optional().default("recall"),
+        action: z.literal("recall"),
         cue: z.string().describe("Recall cue"),
         limit: z.number().optional().describe("Max results (default: 5)"),
         type: z.nativeEnum(MemoryType).optional().describe("Filter by type"),
