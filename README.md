@@ -174,7 +174,17 @@ engram exposes its cognitive model as an MCP (Model Context Protocol) server, so
 
 ### Setup
 
-The easiest way is `engram install` (see above). To configure manually, add to your MCP client configuration:
+The easiest way is `engram install` (see above). To configure manually:
+
+```bash
+# User-scoped (available across all projects, writes to ~/.claude.json)
+claude mcp add engram --scope user -- bunx -p @cogmem/engram engram-mcp
+
+# Project-scoped (shared via version control, writes to .mcp.json)
+claude mcp add engram --scope project -- bunx -p @cogmem/engram engram-mcp
+```
+
+Or add directly to your MCP config file (`~/.claude.json` for user, `.mcp.json` for project):
 
 ```json
 {
