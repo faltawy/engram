@@ -1,7 +1,5 @@
 # engram
 
-**Human memory for artificial minds.**
-
 > **Note:** This is an experiment in cognitive memory architecture. It's a research prototype, not production software.
 
 Every AI agent today has amnesia. They process, respond, and forget. engram fixes this — not with a smarter key-value store, but with a cognitive memory system modeled on how the human brain actually forms, stores, recalls, and forgets information.
