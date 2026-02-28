@@ -1,5 +1,11 @@
 # @cogmem/engram
 
+## 0.3.0
+
+### Minor Changes
+
+- 1acccc2: Add `engram install` command that installs the SKILL.md cognitive protocol and configures the MCP server for your AI editor. Supports `--provider`, `--global`/`--project` scope, `--dry-run`, and interactive prompts when flags are omitted.
+
 ## 0.2.1
 
 ### Patch Changes
