@@ -29,6 +29,8 @@ export const AssociationType = {
   Temporal: "temporal",
   Semantic: "semantic",
   CoRecall: "co-recall",
+  Emotional: "emotional",
+  Causal: "causal",
 } as const;
 export type AssociationType = (typeof AssociationType)[keyof typeof AssociationType];
 

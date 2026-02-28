@@ -2,6 +2,8 @@ import type { CognitiveConfig } from "../config/defaults.ts";
 import type { EngramStorage } from "../storage/sqlite.ts";
 import type { Memory, RecallResult } from "./memory.ts";
 import { computeActivation, spreadingActivationStrength } from "./activation.ts";
+import { getSpreadingActivationTargets } from "./associations.ts";
+import { getWorkingMemoryIds } from "./working-memory.ts";
 
 export function recall(
   storage: EngramStorage,
@@ -20,22 +22,17 @@ export function recall(
   const limit = options?.limit ?? 10;
   const associative = options?.associative ?? true;
 
-  const candidateMap = new Map<string, Memory>();
+  const seedIds = new Set<string>();
+
+  const wmIds = getWorkingMemoryIds(storage);
+  for (const id of wmIds) seedIds.add(id);
 
   const ftsIds = storage.searchFTS(cue, limit * 2);
-  for (const id of ftsIds) {
-    const m = storage.getMemory(id);
-    if (!m) continue;
-    if (options?.type && m.type !== options.type) continue;
-    if (options?.context && (!m.context || !m.context.startsWith(options.context))) continue;
-    candidateMap.set(m.id, m);
-  }
+  for (const id of ftsIds) seedIds.add(id);
 
   if (options?.context) {
     const contextMatches = storage.getMemoriesByContext(options.context, options?.type, limit * 2);
-    for (const m of contextMatches) {
-      candidateMap.set(m.id, m);
-    }
+    for (const m of contextMatches) seedIds.add(m.id);
   }
 
   const allCandidates = options?.type
@@ -49,6 +46,32 @@ export function recall(
 
   const sorted = filtered.sort((a, b) => b.activation - a.activation);
   for (const m of sorted.slice(0, limit)) {
+    seedIds.add(m.id);
+  }
+
+  const candidateIds = new Set<string>(seedIds);
+  const graphBoosts = new Map<string, number>();
+
+  if (associative) {
+    for (const seedId of seedIds) {
+      const targets = getSpreadingActivationTargets(storage, seedId, config);
+      const isWmSeed = wmIds.includes(seedId);
+      const primingWeight = isWmSeed ? config.workingMemoryPrimingWeight : 1.0;
+
+      for (const t of targets) {
+        candidateIds.add(t.memoryId);
+        const existing = graphBoosts.get(t.memoryId) ?? 0;
+        graphBoosts.set(t.memoryId, existing + t.activationBoost * primingWeight);
+      }
+    }
+  }
+
+  const candidateMap = new Map<string, Memory>();
+  for (const id of candidateIds) {
+    const m = storage.getMemory(id);
+    if (!m) continue;
+    if (options?.type && m.type !== options.type) continue;
+    if (options?.context && (!m.context || !m.context.startsWith(options.context))) continue;
     candidateMap.set(m.id, m);
   }
 
@@ -59,8 +82,8 @@ export function recall(
   for (const memory of candidateMap.values()) {
     const timestamps = storage.getAccessTimestamps(memory.id);
 
-    let spreadingSum = 0;
-    if (associative) {
+    let spreadingSum = graphBoosts.get(memory.id) ?? 0;
+    if (associative && spreadingSum === 0) {
       const assocFrom = storage.getAssociationsFrom(memory.id);
       const assocTo = storage.getAssociationsTo(memory.id);
       const allAssocs = [...assocFrom, ...assocTo];

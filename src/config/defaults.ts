@@ -14,6 +14,9 @@ export interface CognitiveConfig {
   reconsolidationBlendRate: number;
   chunkingSimilarityThreshold: number;
   semanticExtractionThreshold: number;
+  temporalContextWindow: number;
+  recallSpreadingDepth: number;
+  workingMemoryPrimingWeight: number;
   dbPath: string;
 }
 
@@ -33,6 +36,9 @@ export const DEFAULT_CONFIG: CognitiveConfig = {
   reconsolidationBlendRate: 0.1,
   chunkingSimilarityThreshold: 0.6,
   semanticExtractionThreshold: 3,
+  temporalContextWindow: 10,
+  recallSpreadingDepth: 3,
+  workingMemoryPrimingWeight: 0.5,
   dbPath: "~/.engram/memory.db",
 };
 

@@ -10,11 +10,14 @@ export {
   getFocus,
   clearFocus,
   focusUtilization,
+  getWorkingMemoryIds,
 } from "./core/working-memory.ts";
 export {
   formAssociation,
   formTemporalAssociations,
   formSemanticAssociations,
+  formEmotionalAssociations,
+  formCausalAssociations,
   recordCoRecall,
   getSpreadingActivationTargets,
 } from "./core/associations.ts";

@@ -54,6 +54,13 @@ export function clearFocus(storage: EngramStorage): number {
   return count;
 }
 
+export function getWorkingMemoryIds(storage: EngramStorage): string[] {
+  return storage
+    .getWorkingMemory()
+    .filter((s) => s.memoryRef !== null)
+    .map((s) => s.memoryRef!);
+}
+
 export function focusUtilization(
   storage: EngramStorage,
   config: CognitiveConfig,

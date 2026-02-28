@@ -4,6 +4,7 @@ import type { Memory, EncodeInput } from "./memory.ts";
 import { generateMemoryId } from "./memory.ts";
 import { defaultEmotionWeight } from "./emotional-tag.ts";
 import { baseLevelActivation } from "./activation.ts";
+import { formEmotionalAssociations, formCausalAssociations } from "./associations.ts";
 
 export function encode(
   storage: EngramStorage,
@@ -42,6 +43,9 @@ export function encode(
     storage.insertMemory(memory);
     storage.logAccess(id, "encode", currentTime);
   });
+
+  formEmotionalAssociations(storage, memory, currentTime);
+  formCausalAssociations(storage, memory, config, currentTime);
 
   return memory;
 }
