@@ -6,6 +6,7 @@ import { consolidate } from "../../src/core/consolidation.ts";
 import { pushFocus } from "../../src/core/working-memory.ts";
 import { DEFAULT_CONFIG, type CognitiveConfig } from "../../src/config/defaults.ts";
 import type { EncodeInput } from "../../src/core/memory.ts";
+import { hitRate, avgRank } from "./helpers.ts";
 
 const config: CognitiveConfig = {
   ...DEFAULT_CONFIG,
@@ -16,21 +17,6 @@ const config: CognitiveConfig = {
 
 function makeStorage() {
   return EngramStorage.inMemory();
-}
-
-function hitRate(results: { memory: { id: string } }[], expectedIds: string[]): number {
-  if (expectedIds.length === 0) return 1;
-  const found = expectedIds.filter((id) => results.some((r) => r.memory.id === id));
-  return found.length / expectedIds.length;
-}
-
-function avgRank(results: { memory: { id: string } }[], expectedIds: string[]): number {
-  const ranks = expectedIds
-    .map((id) => results.findIndex((r) => r.memory.id === id))
-    .filter((r) => r >= 0)
-    .map((r) => r + 1);
-  if (ranks.length === 0) return Infinity;
-  return ranks.reduce((a, b) => a + b, 0) / ranks.length;
 }
 
 describe("Multi-Session Project", () => {
@@ -358,6 +344,162 @@ describe("Scenario Scoring", () => {
     console.log(`[Agent Scenarios] Mean avg rank: ${meanAvgRank.toFixed(1)}`);
 
     expect(meanHitRate).toBeGreaterThan(0.3);
+
+    storage.close();
+  });
+});
+
+describe("Long Time-Scale Project", () => {
+  test("60 memories across 4 simulated weeks with cross-week retrieval", () => {
+    const storage = makeStorage();
+    const now = 1000000000;
+    const day = 86400000;
+    const week = day * 7;
+
+    const week1: EncodeInput[] = [
+      { content: "kicked off billing rewrite project sprint planning session", type: "episodic", context: "project:rewrite", emotion: "curiosity", emotionWeight: 0.5 },
+      { content: "architecture decision: event-sourced billing with CQRS pattern", type: "semantic", context: "project:rewrite" },
+      { content: "mapped legacy billing domain models to new schema design", type: "episodic", context: "project:rewrite" },
+      { content: "discovered legacy discount rules buried in stored procedures", type: "episodic", context: "project:rewrite", emotion: "surprise", emotionWeight: 0.6 },
+      { content: "documented 15 distinct discount rule types from legacy system", type: "episodic", context: "project:rewrite" },
+      { content: "legacy discount rules include volume tiers percentage and fixed amount", type: "semantic", context: "project:rewrite" },
+      { content: "designed discount engine interface supporting composable rules", type: "semantic", context: "project:rewrite" },
+      { content: "implemented base billing aggregate with event replay capability", type: "episodic", context: "project:rewrite" },
+      { content: "set up event store with PostgreSQL and outbox pattern", type: "procedural", context: "project:rewrite" },
+      { content: "created migration scripts for legacy billing data transformation", type: "procedural", context: "project:rewrite" },
+      { content: "legacy system handles 50000 invoices monthly during peak", type: "semantic", context: "project:rewrite" },
+      { content: "defined billing context bounded context with clear aggregate boundaries", type: "semantic", context: "project:rewrite" },
+      { content: "spike: evaluated temporal workflow engine for billing orchestration", type: "episodic", context: "project:rewrite" },
+      { content: "decided against temporal due to operational complexity concerns", type: "semantic", context: "project:rewrite" },
+      { content: "sprint review: completed domain modeling and architecture decisions", type: "episodic", context: "project:rewrite", emotion: "satisfaction", emotionWeight: 0.5 },
+    ];
+
+    const week2: EncodeInput[] = [
+      { content: "started Stripe payment integration for billing rewrite", type: "episodic", context: "project:rewrite" },
+      { content: "Stripe payment intent API requires idempotency keys for safety", type: "semantic", context: "project:rewrite" },
+      { content: "implemented payment intent creation with idempotency key generation", type: "episodic", context: "project:rewrite" },
+      { content: "configured Stripe webhook endpoint for payment event processing", type: "procedural", context: "project:rewrite" },
+      { content: "webhook signature verification prevents replay attacks", type: "semantic", context: "project:rewrite" },
+      { content: "implemented payment retry logic with exponential backoff", type: "episodic", context: "project:rewrite" },
+      { content: "idempotency ensures retried payments are not double charged", type: "semantic", context: "project:rewrite" },
+      { content: "added reconciliation job comparing Stripe records with local ledger", type: "episodic", context: "project:rewrite" },
+      { content: "reconciliation found 3 edge cases in refund timing", type: "episodic", context: "project:rewrite", emotion: "frustration", emotionWeight: 0.5 },
+      { content: "fixed refund timing race condition with distributed lock", type: "episodic", context: "project:rewrite", emotion: "satisfaction", emotionWeight: 0.5 },
+      { content: "Stripe error handling covers network timeout and rate limit scenarios", type: "semantic", context: "project:rewrite" },
+      { content: "payment service error codes mapped to customer-facing messages", type: "semantic", context: "project:rewrite" },
+      { content: "added dead letter queue for unprocessable payment events", type: "episodic", context: "project:rewrite" },
+      { content: "implemented payment audit trail with immutable event log", type: "procedural", context: "project:rewrite" },
+      { content: "payment integration passes all Stripe test mode scenarios", type: "episodic", context: "project:rewrite", emotion: "satisfaction", emotionWeight: 0.4 },
+    ];
+
+    const week3: EncodeInput[] = [
+      { content: "started subscription engine implementation for recurring billing", type: "episodic", context: "project:rewrite" },
+      { content: "subscription lifecycle: trial activation renewal cancellation states", type: "semantic", context: "project:rewrite" },
+      { content: "implemented subscription state machine with explicit transitions", type: "episodic", context: "project:rewrite" },
+      { content: "proration calculates mid-cycle upgrade and downgrade adjustments", type: "semantic", context: "project:rewrite" },
+      { content: "proration uses daily rate calculation for upgrade credit", type: "episodic", context: "project:rewrite" },
+      { content: "dunning process retries failed subscription payments three times", type: "semantic", context: "project:rewrite" },
+      { content: "implemented dunning email sequence: reminder warning suspension", type: "episodic", context: "project:rewrite" },
+      { content: "usage-based billing tracks metered API calls per subscription", type: "semantic", context: "project:rewrite" },
+      { content: "usage aggregation runs hourly with 5-minute billing granularity", type: "procedural", context: "project:rewrite" },
+      { content: "implemented usage billing threshold alerts for customers", type: "episodic", context: "project:rewrite" },
+      { content: "subscription migration tool handles legacy plan mapping", type: "procedural", context: "project:rewrite" },
+      { content: "migration dry-run identified 200 accounts needing manual review", type: "episodic", context: "project:rewrite", emotion: "anxiety", emotionWeight: 0.4 },
+      { content: "resolved migration conflicts for grandfathered pricing plans", type: "episodic", context: "project:rewrite" },
+      { content: "subscription engine handles timezone-aware billing cycles", type: "semantic", context: "project:rewrite" },
+      { content: "all subscription state transitions covered by property-based tests", type: "episodic", context: "project:rewrite", emotion: "satisfaction", emotionWeight: 0.4 },
+    ];
+
+    const week4: EncodeInput[] = [
+      { content: "started integration testing phase for billing rewrite", type: "episodic", context: "project:rewrite" },
+      { content: "integration tests cover payment subscription and discount flows", type: "procedural", context: "project:rewrite" },
+      { content: "shadow billing runs new system in parallel with legacy for comparison", type: "episodic", context: "project:rewrite" },
+      { content: "shadow billing found 0.3% discrepancy in tax calculation rounding", type: "episodic", context: "project:rewrite", emotion: "frustration", emotionWeight: 0.4 },
+      { content: "fixed tax rounding by using banker rounding consistently", type: "episodic", context: "project:rewrite" },
+      { content: "load testing simulated 100000 concurrent billing operations", type: "episodic", context: "project:rewrite" },
+      { content: "load test revealed connection pool bottleneck at 80000 ops", type: "episodic", context: "project:rewrite", emotion: "anxiety", emotionWeight: 0.5 },
+      { content: "resolved bottleneck by adding read replicas for billing queries", type: "episodic", context: "project:rewrite", emotion: "satisfaction", emotionWeight: 0.5 },
+      { content: "production deployment plan uses blue-green with instant rollback", type: "procedural", context: "project:rewrite" },
+      { content: "rollback procedure tested: switches DNS back to legacy in 30 seconds", type: "procedural", context: "project:rewrite" },
+      { content: "feature flags control gradual migration of customer cohorts", type: "semantic", context: "project:rewrite" },
+      { content: "deployed billing rewrite to 5% of traffic as initial canary", type: "episodic", context: "project:rewrite" },
+      { content: "canary metrics show 40% latency improvement over legacy billing", type: "episodic", context: "project:rewrite", emotion: "joy", emotionWeight: 0.7 },
+      { content: "expanded to 50% traffic after 48 hours of clean canary metrics", type: "episodic", context: "project:rewrite" },
+      { content: "billing rewrite retrospective: project completed on schedule with improved architecture", type: "episodic", context: "project:rewrite", emotion: "satisfaction", emotionWeight: 0.8 },
+    ];
+
+    const allIds: string[] = [];
+    let time = now;
+    const weeks = [week1, week2, week3, week4];
+    for (let w = 0; w < weeks.length; w++) {
+      for (const input of weeks[w]!) {
+        const mem = encode(storage, input, config, time);
+        allIds.push(mem.id);
+        time += day / 3;
+      }
+      time = now + (w + 1) * week;
+      consolidate(storage, config, time);
+    }
+
+    const queryTime = now + 5 * week;
+
+    const recallLimit = 40;
+    const week1Ids = allIds.slice(0, 15);
+    const week2Ids = allIds.slice(15, 30);
+    const week3Ids = allIds.slice(30, 45);
+    const week4Ids = allIds.slice(45, 60);
+
+    const q1Results = recall(storage, "legacy discount rules", config, {
+      deterministic: true,
+      now: queryTime,
+      limit: recallLimit,
+      context: "project:rewrite",
+    });
+    const q1Week1 = q1Results.filter((r) => week1Ids.includes(r.memory.id)).length;
+    expect(q1Week1).toBeGreaterThan(0);
+
+    const q2Results = recall(storage, "payment retry idempotency", config, {
+      deterministic: true,
+      now: queryTime,
+      limit: recallLimit,
+      context: "project:rewrite",
+    });
+    const q2Week2 = q2Results.filter((r) => week2Ids.includes(r.memory.id)).length;
+    expect(q2Week2).toBeGreaterThan(0);
+
+    const q3Results = recall(storage, "subscription proration upgrade", config, {
+      deterministic: true,
+      now: queryTime,
+      limit: recallLimit,
+      context: "project:rewrite",
+    });
+    const q3Week3 = q3Results.filter((r) => week3Ids.includes(r.memory.id)).length;
+    expect(q3Week3).toBeGreaterThan(0);
+
+    const q4Results = recall(storage, "production deployment rollback", config, {
+      deterministic: true,
+      now: queryTime,
+      limit: recallLimit,
+      context: "project:rewrite",
+    });
+    const q4Week4 = q4Results.filter((r) => week4Ids.includes(r.memory.id)).length;
+    expect(q4Week4).toBeGreaterThan(0);
+
+    const q5Results = recall(storage, "billing rewrite overall progress", config, {
+      deterministic: true,
+      now: queryTime,
+      limit: recallLimit,
+      context: "project:rewrite",
+    });
+    const q5Weeks = new Set(
+      q5Results.map((r) => {
+        const idx = allIds.indexOf(r.memory.id);
+        return Math.floor(idx / 15);
+      }).filter((w) => w >= 0)
+    );
+    expect(q5Weeks.size).toBeGreaterThanOrEqual(2);
+
+    console.log(`[Long Project] Q1(w1): ${q1Week1} Q2(w2): ${q2Week2} Q3(w3): ${q3Week3} Q4(w4): ${q4Week4} Q5(weeks): ${[...q5Weeks].join(",")}`);
 
     storage.close();
   });

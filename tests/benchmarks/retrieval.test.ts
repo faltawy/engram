@@ -5,6 +5,7 @@ import { recall } from "../../src/core/recall.ts";
 import { consolidate } from "../../src/core/consolidation.ts";
 import { DEFAULT_CONFIG, type CognitiveConfig } from "../../src/config/defaults.ts";
 import type { Emotion, MemoryType } from "../../src/core/memory.ts";
+import { precision, recallRate, mrr, generateCorpus, generateInterferingCorpus } from "./helpers.ts";
 
 const config: CognitiveConfig = {
   ...DEFAULT_CONFIG,
@@ -28,25 +29,6 @@ interface QuerySpec {
   cue: string;
   expected: number[];
   context?: string;
-}
-
-function precision(retrieved: number[], relevant: number[]): number {
-  if (retrieved.length === 0) return 0;
-  const hits = retrieved.filter((id) => relevant.includes(id)).length;
-  return hits / retrieved.length;
-}
-
-function recallRate(retrieved: number[], relevant: number[]): number {
-  if (relevant.length === 0) return 1;
-  const hits = retrieved.filter((id) => relevant.includes(id)).length;
-  return hits / relevant.length;
-}
-
-function mrr(retrieved: number[], relevant: number[]): number {
-  for (let i = 0; i < retrieved.length; i++) {
-    if (relevant.includes(retrieved[i]!)) return 1 / (i + 1);
-  }
-  return 0;
 }
 
 const corpus: MemorySpec[] = [
@@ -274,6 +256,272 @@ describe("Tier 1: Retrieval Quality", () => {
 
     const foundBorC = results.some((r) => r.memory.id === memB.id || r.memory.id === memC.id);
     expect(foundBorC).toBe(true);
+
+    storage.close();
+  });
+});
+
+describe("Scale Retrieval Quality", () => {
+  function runScaleTest(size: number, queryCount: number) {
+    const storage = makeStorage();
+    const now = 1000000000;
+    const corpus = generateCorpus(size);
+
+    const memoryIds: string[] = [];
+    for (let i = 0; i < corpus.length; i++) {
+      const mem = encode(storage, corpus[i]!, config, now + i * 100);
+      memoryIds.push(mem.id);
+    }
+
+    const scaleQueries = [
+      "payment service retry logic",
+      "database query optimization index",
+      "frontend component rendering performance",
+      "kubernetes deployment scaling",
+      "authentication token rotation security",
+      "API endpoint rate limiting",
+      "testing coverage integration mock",
+      "mobile push notification offline",
+      "docker container registry helm",
+      "monitoring alerts prometheus grafana",
+      "cache invalidation strategy redis",
+      "websocket connection handler",
+      "CI/CD pipeline automated build",
+      "load balancer health check",
+      "search indexing elasticsearch",
+    ].slice(0, queryCount);
+
+    let totalPrecision = 0;
+    let totalRecall = 0;
+    let totalMrr = 0;
+
+    for (const cue of scaleQueries) {
+      const results = recall(storage, cue, config, {
+        deterministic: true,
+        now: now + size * 100 + 2000,
+        limit: 10,
+      });
+
+      const retrievedIndices = results.map((r) => memoryIds.indexOf(r.memory.id)).filter((i) => i >= 0);
+      const relevant = corpus
+        .map((m, i) => ({ m, i }))
+        .filter(({ m }) => cue.split(" ").some((w) => m.content.includes(w)))
+        .map(({ i }) => i);
+
+      if (relevant.length > 0) {
+        totalPrecision += precision(retrievedIndices, relevant);
+        totalRecall += recallRate(retrievedIndices, relevant);
+        totalMrr += mrr(retrievedIndices, relevant);
+      }
+    }
+
+    storage.close();
+
+    return {
+      avgPrecision: totalPrecision / queryCount,
+      avgRecall: totalRecall / queryCount,
+      avgMrr: totalMrr / queryCount,
+    };
+  }
+
+  test("precision/recall/MRR at 100 memories", () => {
+    const { avgRecall, avgPrecision, avgMrr } = runScaleTest(100, 10);
+    console.log(`[Scale 100] P=${(avgPrecision * 100).toFixed(1)}% R=${(avgRecall * 100).toFixed(1)}% MRR=${(avgMrr * 100).toFixed(1)}%`);
+    expect(avgRecall).toBeGreaterThan(0.10);
+  });
+
+  test("precision/recall/MRR at 250 memories", () => {
+    const { avgRecall, avgPrecision, avgMrr } = runScaleTest(250, 15);
+    console.log(`[Scale 250] P=${(avgPrecision * 100).toFixed(1)}% R=${(avgRecall * 100).toFixed(1)}% MRR=${(avgMrr * 100).toFixed(1)}%`);
+    expect(avgRecall).toBeGreaterThan(0.08);
+  });
+
+  test("precision/recall/MRR at 500 memories", () => {
+    const { avgRecall, avgPrecision, avgMrr } = runScaleTest(500, 15);
+    console.log(`[Scale 500] P=${(avgPrecision * 100).toFixed(1)}% R=${(avgRecall * 100).toFixed(1)}% MRR=${(avgMrr * 100).toFixed(1)}%`);
+    expect(avgRecall).toBeGreaterThan(0.05);
+  });
+
+  test("degradation curve across sizes", () => {
+    const sharedQueries = [
+      "payment service retry logic",
+      "database query optimization index",
+      "frontend component rendering",
+      "kubernetes deployment scaling",
+      "authentication token rotation",
+    ];
+    const sizes = [50, 100, 250, 500] as const;
+    const mrrBySize: Record<number, number> = {};
+
+    for (const size of sizes) {
+      const storage = makeStorage();
+      const now = 1000000000;
+      const corpus = generateCorpus(size);
+
+      const memoryIds: string[] = [];
+      for (let i = 0; i < corpus.length; i++) {
+        const mem = encode(storage, corpus[i]!, config, now + i * 100);
+        memoryIds.push(mem.id);
+      }
+
+      let totalMrr = 0;
+      for (const cue of sharedQueries) {
+        const results = recall(storage, cue, config, {
+          deterministic: true,
+          now: now + size * 100 + 2000,
+          limit: 10,
+        });
+        const retrievedIndices = results.map((r) => memoryIds.indexOf(r.memory.id)).filter((i) => i >= 0);
+        const relevant = corpus
+          .map((m, i) => ({ m, i }))
+          .filter(({ m }) => cue.split(" ").some((w) => m.content.includes(w)))
+          .map(({ i }) => i);
+        if (relevant.length > 0) {
+          totalMrr += mrr(retrievedIndices, relevant);
+        }
+      }
+
+      mrrBySize[size] = totalMrr / sharedQueries.length;
+      storage.close();
+    }
+
+    console.log(
+      `[Scale Degradation] 50: ${(mrrBySize[50]! * 100).toFixed(1)}%, 100: ${(mrrBySize[100]! * 100).toFixed(1)}%, 250: ${(mrrBySize[250]! * 100).toFixed(1)}%, 500: ${(mrrBySize[500]! * 100).toFixed(1)}%`
+    );
+
+    expect(mrrBySize[500]!).toBeGreaterThanOrEqual(mrrBySize[50]! * 0.3);
+  });
+});
+
+describe("Interference & Competition", () => {
+  test("disambiguates 'pool' across contexts", () => {
+    const storage = makeStorage();
+    const now = 1000000000;
+
+    const poolCorpus = generateInterferingCorpus("pool", [
+      {
+        context: "domain:connection-pool",
+        templates: [
+          "connection {keyword} exhaustion causing timeout errors",
+          "database {keyword} size configured to 20 connections",
+          "{keyword} manager handles connection lifecycle",
+          "max {keyword} connections reached during peak traffic",
+          "{keyword} idle timeout set to 30 seconds",
+          "connection {keyword} monitoring added to dashboard",
+          "{keyword} drain on graceful shutdown implemented",
+          "dynamic {keyword} sizing based on load metrics",
+          "connection {keyword} leak detected in service",
+          "{keyword} saturation alert configured at 80%",
+        ],
+      },
+      {
+        context: "domain:thread-pool",
+        templates: [
+          "thread {keyword} executor with fixed size workers",
+          "worker {keyword} processes background jobs",
+          "{keyword} thread count tuned for CPU cores",
+          "task queue overflow in thread {keyword}",
+          "{keyword} shutdown awaits pending tasks",
+          "thread {keyword} deadlock detected under load",
+          "{keyword} fork-join framework for parallel tasks",
+          "bounded thread {keyword} prevents resource starvation",
+          "{keyword} work stealing algorithm implemented",
+          "thread {keyword} monitoring for blocked threads",
+        ],
+      },
+      {
+        context: "domain:data-pool",
+        templates: [
+          "data {keyword} aggregates metrics from sensors",
+          "{keyword} of training data preprocessed for model",
+          "shared data {keyword} between microservices",
+          "object {keyword} pattern for memory allocation",
+          "{keyword} allocator reduces garbage collection",
+          "buffer {keyword} for batch processing pipeline",
+          "resource {keyword} with lazy initialization",
+          "memory {keyword} pre-allocated for hot path",
+          "data {keyword} partitioned by region",
+          "{keyword} of user events for analytics",
+        ],
+      },
+    ], 10);
+
+    for (let i = 0; i < poolCorpus.length; i++) {
+      encode(storage, poolCorpus[i]!, config, now + i * 100);
+    }
+
+    consolidate(storage, config, now + poolCorpus.length * 100 + 1000);
+
+    const filteredResults = recall(storage, "pool exhaustion under load", config, {
+      deterministic: true,
+      now: now + poolCorpus.length * 100 + 5000,
+      limit: 5,
+      context: "domain:connection-pool",
+    });
+    const allConnectionPool = filteredResults.every((r) => r.memory.context === "domain:connection-pool");
+    expect(allConnectionPool).toBe(true);
+
+    const unfilteredResults = recall(storage, "pool exhaustion under load", config, {
+      deterministic: true,
+      now: now + poolCorpus.length * 100 + 6000,
+      limit: 5,
+    });
+    const topResult = unfilteredResults[0];
+    expect(topResult).toBeDefined();
+    expect(topResult!.memory.context).toBe("domain:connection-pool");
+
+    storage.close();
+  });
+
+  test("competing 'cache' memories resolved by specificity", () => {
+    const storage = makeStorage();
+    const now = 1000000000;
+
+    const cacheMemories = [
+      { content: "redis cache invalidation using pub/sub pattern", type: "episodic" as const, context: "cache:redis" },
+      { content: "redis cache TTL strategy for session data", type: "episodic" as const, context: "cache:redis" },
+      { content: "redis cache cluster with sentinel failover", type: "episodic" as const, context: "cache:redis" },
+      { content: "redis cache memory eviction policy configured LRU", type: "episodic" as const, context: "cache:redis" },
+      { content: "redis cache pipeline for bulk operations", type: "episodic" as const, context: "cache:redis" },
+      { content: "browser cache headers set for static assets", type: "episodic" as const, context: "cache:browser" },
+      { content: "browser cache service worker for offline support", type: "episodic" as const, context: "cache:browser" },
+      { content: "browser cache local storage for user preferences", type: "episodic" as const, context: "cache:browser" },
+      { content: "browser cache IndexedDB for large data sets", type: "episodic" as const, context: "cache:browser" },
+      { content: "browser cache manifest for progressive web app", type: "episodic" as const, context: "cache:browser" },
+      { content: "CPU cache line alignment for struct layout", type: "episodic" as const, context: "cache:cpu" },
+      { content: "CPU cache miss profiling with perf tools", type: "episodic" as const, context: "cache:cpu" },
+      { content: "CPU cache prefetch hints for sequential access", type: "episodic" as const, context: "cache:cpu" },
+      { content: "CPU cache coherence protocol in multicore", type: "episodic" as const, context: "cache:cpu" },
+      { content: "CPU cache false sharing between threads", type: "episodic" as const, context: "cache:cpu" },
+      { content: "DNS cache poisoning prevention with DNSSEC", type: "episodic" as const, context: "cache:dns" },
+      { content: "DNS cache TTL configuration for domain records", type: "episodic" as const, context: "cache:dns" },
+      { content: "DNS cache flush procedure for testing", type: "episodic" as const, context: "cache:dns" },
+      { content: "DNS cache resolver performance tuning", type: "episodic" as const, context: "cache:dns" },
+      { content: "DNS cache negative caching for NXDOMAIN", type: "episodic" as const, context: "cache:dns" },
+    ];
+
+    for (let i = 0; i < cacheMemories.length; i++) {
+      encode(storage, cacheMemories[i]!, config, now + i * 100);
+    }
+
+    consolidate(storage, config, now + cacheMemories.length * 100 + 1000);
+
+    const filteredResults = recall(storage, "redis cache invalidation", config, {
+      deterministic: true,
+      now: now + cacheMemories.length * 100 + 5000,
+      limit: 5,
+      context: "cache:redis",
+    });
+    const filteredRedis = filteredResults.filter((r) => r.memory.context === "cache:redis").length;
+    expect(filteredRedis).toBeGreaterThanOrEqual(2);
+
+    const unfilteredResults = recall(storage, "redis cache invalidation", config, {
+      deterministic: true,
+      now: now + cacheMemories.length * 100 + 6000,
+      limit: 10,
+    });
+    const unfilteredRedis = unfilteredResults.filter((r) => r.memory.context === "cache:redis").length;
+    expect(unfilteredRedis).toBeGreaterThanOrEqual(1);
 
     storage.close();
   });
