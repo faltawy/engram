@@ -56,7 +56,7 @@ export const claudeProvider: ProviderInstaller = {
   async installGlobal(skillContent, dryRun) {
     const home = homedir();
     const skillDir = join(home, ".claude", "skills", "engram");
-    const configPath = join(home, ".claude", "settings.json");
+    const configPath = join(home, ".claude.json");
 
     const skillInstalled = installSkill(skillDir, skillContent, dryRun);
     const mcpInstalled = configureMcp(configPath, dryRun);
@@ -78,7 +78,7 @@ export const claudeProvider: ProviderInstaller = {
 
   async installProject(skillContent, projectDir, dryRun) {
     const skillDir = join(projectDir, ".claude", "skills", "engram");
-    const configPath = join(projectDir, ".claude", "settings.local.json");
+    const configPath = join(projectDir, ".mcp.json");
 
     const skillInstalled = installSkill(skillDir, skillContent, dryRun);
     const mcpInstalled = configureMcp(configPath, dryRun);

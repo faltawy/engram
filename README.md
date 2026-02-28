@@ -25,8 +25,8 @@ The `install` command sets up the skill file and MCP server config for your edit
 
 ```bash
 engram install                                    # interactive — prompts for provider + scope
-engram install --provider claude --global         # no prompts, installs to ~/.claude/
-engram install --provider claude --project        # installs to ./.claude/ in current dir
+engram install --provider claude --global         # skill → ~/.claude/skills/, MCP → ~/.claude.json
+engram install --provider claude --project        # skill → .claude/skills/, MCP → .mcp.json
 engram install --provider claude --global --dry-run  # preview without writing files
 ```
 
