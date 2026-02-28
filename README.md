@@ -19,6 +19,21 @@ bun install -g @cogmem/engram
 engram --help
 ```
 
+### Quick Setup for AI Editors
+
+The `install` command sets up the skill file and MCP server config for your editor:
+
+```bash
+engram install                                    # interactive — prompts for provider + scope
+engram install --provider claude --global         # no prompts, installs to ~/.claude/
+engram install --provider claude --project        # installs to ./.claude/ in current dir
+engram install --provider claude --global --dry-run  # preview without writing files
+```
+
+This installs two things:
+1. **SKILL.md** — a cognitive protocol that teaches agents how to use engram effectively
+2. **MCP config** — adds the engram server to your editor's MCP settings
+
 ## The Science
 
 engram is built on memory research. Every design decision traces back to how the brain operates.
@@ -158,7 +173,7 @@ engram exposes its cognitive model as an MCP (Model Context Protocol) server, so
 
 ### Setup
 
-Add to your MCP client configuration (e.g., Claude Code `settings.json`):
+The easiest way is `engram install` (see above). To configure manually, add to your MCP client configuration:
 
 ```json
 {
