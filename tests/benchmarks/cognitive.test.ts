@@ -15,6 +15,7 @@ const config: CognitiveConfig = {
   ...DEFAULT_CONFIG,
   activationNoise: 0,
   retrievalThreshold: -10.0,
+  pruningThreshold: -20.0,
 };
 
 function makeStorage() {
@@ -338,6 +339,175 @@ describe("Graph Traversal Depth", () => {
 
     const depthD = targets.find((t) => t.memoryId === d.id);
     expect(depthD?.depth).toBe(3);
+
+    storage.close();
+  });
+});
+
+describe("Fan Effect at Scale", () => {
+  const fanConfig: CognitiveConfig = { ...config, maxSpreadingActivation: 5.0 };
+
+  test("spreading activation attenuates with 30 fan-out", () => {
+    const storage = makeStorage();
+    const now = 1000000000;
+
+    const hub = encode(storage, { content: "central hub concept architecture overview", type: "semantic" }, fanConfig, now);
+
+    const spokes: ReturnType<typeof encode>[] = [];
+    for (let i = 0; i < 30; i++) {
+      const spoke = encode(storage, {
+        content: `spoke memory topic number ${i} connected to hub`,
+        type: "semantic",
+      }, config, now + (i + 1) * 100);
+      formAssociation(storage, hub.id, spoke.id, "semantic", 0.8, now);
+      spokes.push(spoke);
+    }
+
+    const distant: ReturnType<typeof encode>[] = [];
+    for (let i = 0; i < 5; i++) {
+      const d = encode(storage, {
+        content: `distant memory reachable via two hops number ${i}`,
+        type: "semantic",
+      }, config, now + 3200 + i * 100);
+      formAssociation(storage, spokes[i]!.id, d.id, "semantic", 0.7, now);
+      distant.push(d);
+    }
+
+    const targets = getSpreadingActivationTargets(storage, hub.id, fanConfig);
+
+    const spokeTargets = targets.filter((t) => spokes.some((s) => s.id === t.memoryId));
+    expect(spokeTargets.length).toBe(30);
+
+    const distantTargets = targets.filter((t) => distant.some((d) => d.id === t.memoryId));
+    expect(distantTargets.length).toBeGreaterThan(0);
+
+    const avgSpokeBoost = spokeTargets.reduce((s, t) => s + t.activationBoost, 0) / spokeTargets.length;
+    console.log(`[Fan Effect] 30-fan spoke boost: ${avgSpokeBoost.toFixed(4)}, distant count: ${distantTargets.length}`);
+    expect(avgSpokeBoost).toBeGreaterThan(0);
+
+    storage.close();
+  });
+
+  test("fan effect comparison: 5 vs 30 connections", () => {
+    const storageA = makeStorage();
+    const storageB = makeStorage();
+    const now = 1000000000;
+
+    const hubA = encode(storageA, { content: "hub alpha central node", type: "semantic" }, fanConfig, now);
+    for (let i = 0; i < 5; i++) {
+      const spoke = encode(storageA, {
+        content: `alpha spoke item number ${i}`,
+        type: "semantic",
+      }, fanConfig, now + (i + 1) * 100);
+      formAssociation(storageA, hubA.id, spoke.id, "semantic", 0.8, now);
+    }
+
+    const hubB = encode(storageB, { content: "hub beta central node", type: "semantic" }, fanConfig, now);
+    for (let i = 0; i < 30; i++) {
+      const spoke = encode(storageB, {
+        content: `beta spoke item number ${i}`,
+        type: "semantic",
+      }, fanConfig, now + (i + 1) * 100);
+      formAssociation(storageB, hubB.id, spoke.id, "semantic", 0.8, now);
+    }
+
+    const targetsA = getSpreadingActivationTargets(storageA, hubA.id, fanConfig);
+    const targetsB = getSpreadingActivationTargets(storageB, hubB.id, fanConfig);
+
+    const avgBoostA = targetsA.length > 0
+      ? targetsA.reduce((s, t) => s + t.activationBoost, 0) / targetsA.length
+      : 0;
+    const avgBoostB = targetsB.length > 0
+      ? targetsB.reduce((s, t) => s + t.activationBoost, 0) / targetsB.length
+      : 0;
+
+    console.log(`[Fan Effect] 5-fan avg boost: ${avgBoostA.toFixed(4)}, 30-fan avg boost: ${avgBoostB.toFixed(4)}`);
+
+    expect(avgBoostA).toBeGreaterThanOrEqual(avgBoostB * 2);
+
+    storageA.close();
+    storageB.close();
+  });
+});
+
+describe("Competing Cues", () => {
+  test("similar memories compete during recall", () => {
+    const storage = makeStorage();
+    const now = 1000000000;
+    const day = 86400000;
+
+    const mem1 = encode(storage, {
+      content: "fixed timeout bug in user authentication service sprint 12",
+      type: "episodic",
+      context: "sprint:12",
+    }, config, now);
+
+    const mem2 = encode(storage, {
+      content: "fixed timeout bug in payment processing service sprint 13",
+      type: "episodic",
+      context: "sprint:13",
+    }, config, now + day * 7);
+
+    const mem3 = encode(storage, {
+      content: "fixed timeout bug in notification delivery service sprint 14",
+      type: "episodic",
+      context: "sprint:14",
+    }, config, now + day * 14);
+
+    consolidate(storage, config, now + day * 15);
+
+    const specificResults = recall(storage, "timeout bug payment processing", config, {
+      deterministic: true,
+      now: now + day * 16,
+      limit: 5,
+    });
+
+    const paymentFound = specificResults.some((r) => r.memory.id === mem2.id);
+    expect(paymentFound).toBe(true);
+
+    const ambiguousResults = recall(storage, "fixed timeout bug in service", config, {
+      deterministic: true,
+      now: now + day * 16,
+      limit: 5,
+    });
+
+    const recentResult = ambiguousResults.find((r) => r.memory.id === mem3.id);
+    expect(recentResult).toBeDefined();
+    expect(ambiguousResults[0]!.memory.id).toBe(mem3.id);
+
+    storage.close();
+  });
+
+  test("emotion-tagged memory beats neutral competitor", () => {
+    const storage = makeStorage();
+    const now = 1000000000;
+
+    const neutral = encode(storage, {
+      content: "deployed microservice update to production cluster",
+      type: "episodic",
+      context: "project:deploy",
+    }, config, now);
+
+    const emotional = encode(storage, {
+      content: "critical microservice deployment to production cluster failed",
+      type: "episodic",
+      context: "project:deploy",
+      emotion: "anxiety",
+      emotionWeight: 0.8,
+    }, config, now + 100);
+
+    const results = recall(storage, "microservice production deployment", config, {
+      deterministic: true,
+      now: now + 5000,
+      limit: 5,
+    });
+
+    const neutralResult = results.find((r) => r.memory.id === neutral.id);
+    const emotionalResult = results.find((r) => r.memory.id === emotional.id);
+
+    expect(emotionalResult).toBeDefined();
+    expect(neutralResult).toBeDefined();
+    expect(emotionalResult!.activation).toBeGreaterThan(neutralResult!.activation);
 
     storage.close();
   });
