@@ -1,6 +1,6 @@
 {
   "name": "@cogmem/engram",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Human memory for artificial minds — a cognitive memory system modeled on neuroscience",
   "type": "module",
   "exports": {
