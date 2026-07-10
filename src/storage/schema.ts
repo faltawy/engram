@@ -41,6 +41,7 @@ export const accessLog = sqliteTable(
       .notNull()
       .references(() => memories.id, { onDelete: "cascade" }),
     accessedAt: integer("accessed_at").notNull(),
+    clock: integer("clock").notNull().default(0),
     accessType: text("access_type", {
       enum: Object.values(AccessType) as [AccessType, ...AccessType[]],
     }).notNull(),
@@ -48,7 +49,21 @@ export const accessLog = sqliteTable(
   (table) => [
     index("idx_access_log_memory_id").on(table.memoryId),
     index("idx_access_log_accessed_at").on(table.accessedAt),
+    index("idx_access_log_clock").on(table.clock),
   ],
+);
+
+export const sessions = sqliteTable(
+  "sessions",
+  {
+    id: text("id").primaryKey(),
+    startedAt: integer("started_at").notNull(),
+    endedAt: integer("ended_at"),
+    startClock: integer("start_clock").notNull(),
+    endClock: integer("end_clock"),
+    context: text("context"),
+  },
+  (table) => [index("idx_sessions_started_at").on(table.startedAt)],
 );
 
 export const associations = sqliteTable(
@@ -91,6 +106,7 @@ export const consolidationLog = sqliteTable("consolidation_log", {
 });
 
 export type Memory = typeof memories.$inferSelect;
+export type Session = typeof sessions.$inferSelect;
 export type NewMemoryRow = typeof memories.$inferInsert;
 export type AccessLogEntry = typeof accessLog.$inferSelect;
 export type Association = typeof associations.$inferSelect;

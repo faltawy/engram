@@ -1,4 +1,8 @@
+export type ClockMode = "agent" | "wall";
+
 export interface CognitiveConfig {
+  clockMode: ClockMode;
+  strengthenWindowEvents: number;
   decayRate: number;
   retrievalThreshold: number;
   latencyFactor: number;
@@ -21,6 +25,8 @@ export interface CognitiveConfig {
 }
 
 export const DEFAULT_CONFIG: CognitiveConfig = {
+  clockMode: "agent",
+  strengthenWindowEvents: 100,
   decayRate: 0.5,
   retrievalThreshold: -3.0,
   latencyFactor: 1.0,
@@ -50,18 +56,17 @@ export function resolveDbPath(dbPath: string): string {
   return dbPath;
 }
 
-export function loadConfig(
-  overrides?: Partial<CognitiveConfig>
-): CognitiveConfig {
+export function loadConfig(overrides?: Partial<CognitiveConfig>): CognitiveConfig {
   const config = { ...DEFAULT_CONFIG, ...overrides };
 
   if (process.env.ENGRAM_DB_PATH) config.dbPath = process.env.ENGRAM_DB_PATH;
-  if (process.env.ENGRAM_DECAY_RATE)
-    config.decayRate = Number(process.env.ENGRAM_DECAY_RATE);
+  if (process.env.ENGRAM_DECAY_RATE) config.decayRate = Number(process.env.ENGRAM_DECAY_RATE);
   if (process.env.ENGRAM_WM_CAPACITY)
     config.workingMemoryCapacity = Number(process.env.ENGRAM_WM_CAPACITY);
   if (process.env.ENGRAM_RETRIEVAL_THRESHOLD)
     config.retrievalThreshold = Number(process.env.ENGRAM_RETRIEVAL_THRESHOLD);
+  if (process.env.ENGRAM_CLOCK_MODE === "agent" || process.env.ENGRAM_CLOCK_MODE === "wall")
+    config.clockMode = process.env.ENGRAM_CLOCK_MODE;
 
   return config;
 }

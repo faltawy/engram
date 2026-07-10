@@ -9,13 +9,21 @@ import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 import { resolveDbPath } from "../config/defaults.ts";
 import type { MemoryType, AccessType } from "../core/memory.ts";
 import { generateId } from "../core/memory.ts";
-import { memories, accessLog, associations, workingMemory, consolidationLog } from "./schema.ts";
+import {
+  memories,
+  accessLog,
+  associations,
+  workingMemory,
+  consolidationLog,
+  sessions,
+} from "./schema.ts";
 import type {
   Memory,
   AccessLogEntry,
   Association,
   WorkingMemorySlot,
   ConsolidationLog,
+  Session,
 } from "./schema.ts";
 import * as schema from "./schema.ts";
 
@@ -23,10 +31,20 @@ export class EngramStorage {
   private sqlite: Database;
   readonly db: BunSQLiteDatabase<typeof schema>;
 
+  private clock: number;
+
   private constructor(sqlite: Database, db: BunSQLiteDatabase<typeof schema>) {
     this.sqlite = sqlite;
     this.db = db;
     this.initFTS();
+    const row = this.sqlite
+      .prepare("SELECT COALESCE(MAX(clock), 0) as c FROM access_log")
+      .get() as { c: number };
+    this.clock = row.c;
+  }
+
+  getClock(): number {
+    return this.clock;
   }
 
   private initFTS(): void {
@@ -223,6 +241,27 @@ export class EngramStorage {
     return result?.value ?? 0;
   }
 
+  findMemoryByIdOrPrefix(idOrPrefix: string): Memory | null {
+    const row = this.db
+      .select()
+      .from(memories)
+      .where(or(eq(memories.id, idOrPrefix), sql`${memories.id} LIKE ${idOrPrefix + "%"}`))
+      .limit(1)
+      .get();
+    return row ?? null;
+  }
+
+  getContexts(): { context: string; count: number }[] {
+    return this.db
+      .select({ context: memories.context, count: count() })
+      .from(memories)
+      .where(sql`${memories.context} IS NOT NULL`)
+      .groupBy(memories.context)
+      .orderBy(desc(count()))
+      .all()
+      .map((r) => ({ context: r.context!, count: r.count }));
+  }
+
   searchFTS(query: string, limit: number = 20): string[] {
     const sanitized = query.replace(/[^a-zA-Z0-9\s]/g, "").trim();
     if (!sanitized) return [];
@@ -239,12 +278,14 @@ export class EngramStorage {
   // ─── Access Log ────────────────────────────────────────────
 
   logAccess(memoryId: string, accessType: AccessType, timestamp?: number): void {
+    this.clock += 1;
     this.db
       .insert(accessLog)
       .values({
         id: generateId(),
         memoryId,
         accessedAt: timestamp ?? Date.now(),
+        clock: this.clock,
         accessType,
       })
       .run();
@@ -267,6 +308,15 @@ export class EngramStorage {
       .orderBy(asc(accessLog.accessedAt))
       .all()
       .map((r) => r.accessedAt);
+  }
+
+  getAccessEntries(memoryId: string): { accessedAt: number; clock: number }[] {
+    return this.db
+      .select({ accessedAt: accessLog.accessedAt, clock: accessLog.clock })
+      .from(accessLog)
+      .where(eq(accessLog.memoryId, memoryId))
+      .orderBy(asc(accessLog.clock))
+      .all();
   }
 
   // ─── Associations ──────────────────────────────────────────
@@ -407,6 +457,50 @@ export class EngramStorage {
       .limit(1)
       .get();
     return row ?? null;
+  }
+
+  // ─── Sessions ──────────────────────────────────────────────
+
+  beginSession(context: string | null, now?: number): Session {
+    const active = this.getActiveSession();
+    if (active) this.endSession(active.id, now);
+
+    const session: Session = {
+      id: generateId(),
+      startedAt: now ?? Date.now(),
+      endedAt: null,
+      startClock: this.clock,
+      endClock: null,
+      context,
+    };
+    this.db.insert(sessions).values(session).run();
+    return session;
+  }
+
+  endSession(id: string, now?: number): Session | null {
+    this.db
+      .update(sessions)
+      .set({ endedAt: now ?? Date.now(), endClock: this.clock })
+      .where(eq(sessions.id, id))
+      .run();
+    const row = this.db.select().from(sessions).where(eq(sessions.id, id)).get();
+    return row ?? null;
+  }
+
+  getActiveSession(): Session | null {
+    const row = this.db
+      .select()
+      .from(sessions)
+      .where(sql`${sessions.endedAt} IS NULL`)
+      .orderBy(desc(sessions.startedAt))
+      .limit(1)
+      .get();
+    return row ?? null;
+  }
+
+  getSessionCount(): number {
+    const result = this.db.select({ value: count() }).from(sessions).get();
+    return result?.value ?? 0;
   }
 
   // ─── Bulk / Utility ────────────────────────────────────────
