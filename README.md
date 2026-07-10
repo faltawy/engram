@@ -50,6 +50,12 @@ The brain has distinct memory systems with different properties:
 | **Semantic Memory**   | Neocortex               | Very long-term      | Facts and concepts, detached from when you learned them              |
 | **Procedural Memory** | Basal Ganglia           | Lifetime            | Skills and habits — immune to decay, expressed through action        |
 
+### Agent Time vs Wall-Clock Time
+
+Humans experience time continuously; agents exist in discrete sessions. A memory model that decays with wall-clock time punishes idleness — a task's memories would fade between sessions even though the agent did nothing to "forget" them.
+
+engram therefore ticks its forgetting clock on **agent events** by default: every encode, recall, and consolidation advances a monotonic clock, and decay is computed over elapsed *events*, not seconds. An idle month costs nothing; memories fade only as the agent does more work without touching them. Set `clockMode: "wall"` (or `ENGRAM_CLOCK_MODE=wall`) for the classic human-like behavior.
+
 ### ACT-R Activation Model
 
 Memory retrieval uses the [ACT-R cognitive architecture](https://act-r.psy.cmu.edu/about/) (Anderson, 1993), the most validated computational model of human memory.
@@ -199,11 +205,13 @@ Or add directly to your MCP config file (`~/.claude.json` for user, `.mcp.json` 
 
 ### Available Tools
 
-| Tool            | Description                                             |
-| --------------- | ------------------------------------------------------- |
-| `memory_store`  | Encode new memories or reconsolidate existing ones      |
-| `memory_recall` | Cue-based retrieval, memory inspection, or system stats |
-| `memory_manage` | Run consolidation or manage working memory              |
+| Tool            | Description                                                                               |
+| --------------- | ----------------------------------------------------------------------------------------- |
+| `memory_store`  | Encode new memories, reconsolidate, forget, or explicitly associate memories              |
+| `memory_recall` | Cue-based retrieval, browsing, memory inspection, context listing, or system stats        |
+| `memory_manage` | Session lifecycle (`session_begin`/`session_end`), consolidation, and working memory      |
+
+Agents should bracket their work with `session_begin` (returns a briefing of relevant memories) and `session_end` (consolidates and closes the session). Any MCP-capable agent — Claude Code, Cursor, custom loops — can use the server; set `ENGRAM_CONTEXT` to inject a context tag when git-based project detection doesn't apply.
 
 ## Programmatic API
 
@@ -236,12 +244,13 @@ engine.close();
 
 Cognitive parameters can be tuned via environment variables or the `loadConfig()` function:
 
-| Parameter               | Default               | Env Variable                 | Description                     |
-| ----------------------- | --------------------- | ---------------------------- | ------------------------------- |
-| `decayRate`             | 0.5                   | `ENGRAM_DECAY_RATE`          | ACT-R power law decay parameter |
-| `retrievalThreshold`    | -1.0                  | `ENGRAM_RETRIEVAL_THRESHOLD` | Minimum activation for recall   |
-| `workingMemoryCapacity` | 7                     | `ENGRAM_WM_CAPACITY`         | Miller's Law capacity limit     |
-| `dbPath`                | `~/.engram/memory.db` | `ENGRAM_DB_PATH`             | SQLite database location        |
+| Parameter               | Default               | Env Variable                 | Description                                    |
+| ----------------------- | --------------------- | ---------------------------- | ---------------------------------------------- |
+| `clockMode`             | `agent`               | `ENGRAM_CLOCK_MODE`          | Decay clock: `agent` (events) or `wall` (time) |
+| `decayRate`             | 0.5                   | `ENGRAM_DECAY_RATE`          | ACT-R power law decay parameter                |
+| `retrievalThreshold`    | -3.0                  | `ENGRAM_RETRIEVAL_THRESHOLD` | Minimum activation for recall                  |
+| `workingMemoryCapacity` | 7                     | `ENGRAM_WM_CAPACITY`         | Miller's Law capacity limit                    |
+| `dbPath`                | `~/.engram/memory.db` | `ENGRAM_DB_PATH`             | SQLite database location                       |
 
 All parameters are also configurable programmatically:
 
