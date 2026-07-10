@@ -505,7 +505,7 @@ describe("associate action", () => {
       action: "associate",
       sourceId: a.id,
       targetId: b.id,
-      type: "causal",
+      associationType: "causal",
     });
     const data = parseResult(result);
     expect(data.type).toBe("causal");
