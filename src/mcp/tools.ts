@@ -111,6 +111,7 @@ function handleEncode(
   },
   defaultContext?: string | null,
 ): ToolResult {
+  if (!args.content) return errorResult("'content' is required for encode.");
   const typeStr = args.type ?? "semantic";
   if (!isValidMemoryType(typeStr)) {
     return errorResult(`Invalid type '${typeStr}'. Valid: ${Object.values(MemoryType).join(", ")}`);
@@ -152,6 +153,7 @@ function handleEncodeBatch(
   },
   defaultContext?: string | null,
 ): ToolResult {
+  if (!args.memories?.length) return errorResult("'memories' is required for encode_batch.");
   const ids: string[] = [];
   const errors: string[] = [];
 
@@ -203,6 +205,7 @@ function handleRecallQuery(
   },
   defaultContext?: string | null,
 ): ToolResult {
+  if (!args.cue) return errorResult("'cue' is required for recall.");
   const typeFilter = args.type && isValidMemoryType(args.type) ? args.type : undefined;
 
   const results = recall(storage, args.cue, config, {
@@ -303,6 +306,7 @@ function handleFocusPush(
   config: CognitiveConfig,
   args: { content: string; memoryRef?: string },
 ): ToolResult {
+  if (!args.content) return errorResult("'content' is required for focus_push.");
   const { slot, evicted } = pushFocus(storage, args.content, config, {
     memoryRef: args.memoryRef,
   });
@@ -352,6 +356,7 @@ function handleRecallToFocus(
   args: { cue: string; limit?: number; type?: string; context?: string },
   defaultContext?: string | null,
 ): ToolResult {
+  if (!args.cue) return errorResult("'cue' is required for recall_to_focus.");
   const typeFilter = args.type && isValidMemoryType(args.type) ? args.type : undefined;
   const limit = args.limit ?? 3;
 
@@ -416,6 +421,7 @@ function handleStats(storage: EngramStorage, config: CognitiveConfig): ToolResul
 }
 
 function handleInspect(storage: EngramStorage, args: { id: string }): ToolResult {
+  if (!args.id) return errorResult("'id' is required for inspect.");
   const match = storage.findMemoryByIdOrPrefix(args.id);
 
   if (!match) {
@@ -452,6 +458,7 @@ function handleInspect(storage: EngramStorage, args: { id: string }): ToolResult
 }
 
 function handleForget(storage: EngramStorage, args: { id: string }): ToolResult {
+  if (!args.id) return errorResult("'id' is required for forget.");
   const memory = storage.findMemoryByIdOrPrefix(args.id);
   if (!memory) {
     return errorResult(`No memory found matching "${args.id}".`);
@@ -465,10 +472,13 @@ function handleAssociate(
   args: {
     sourceId: string;
     targetId: string;
-    type?: string;
+    associationType?: string;
     strength?: number;
   },
 ): ToolResult {
+  if (!args.sourceId || !args.targetId) {
+    return errorResult("'sourceId' and 'targetId' are required for associate.");
+  }
   const source = storage.findMemoryByIdOrPrefix(args.sourceId);
   if (!source) return errorResult(`No memory found matching "${args.sourceId}".`);
   const target = storage.findMemoryByIdOrPrefix(args.targetId);
@@ -478,7 +488,7 @@ function handleAssociate(
   }
 
   const validTypes = Object.values(AssociationType) as string[];
-  const type = args.type ?? "semantic";
+  const type = args.associationType ?? "semantic";
   if (!validTypes.includes(type)) {
     return errorResult(`Invalid association type '${type}'. Valid: ${validTypes.join(", ")}`);
   }
@@ -574,7 +584,8 @@ function handleReconsolidate(
     currentEmotionWeight?: number;
   },
 ): ToolResult {
-  const memory = storage.getMemory(args.id);
+  if (!args.id) return errorResult("'id' is required for reconsolidate.");
+  const memory = storage.findMemoryByIdOrPrefix(args.id);
   if (!memory) {
     return errorResult(`No memory found with id "${args.id}".`);
   }

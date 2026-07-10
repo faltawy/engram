@@ -1,6 +1,6 @@
 ---
 name: engram
-description: Cognitive memory for AI agents — use when encoding, recalling, or managing persistent memories across sessions
+description: Persistent cognitive memory across sessions — use at the START of any coding session in a project with engram configured (session_begin briefs you on prior work), whenever the user references past work ("do you remember", "last time", "we hit this before", "didn't we decide"), when starting work a past session may have touched (releases, recurring bugs, project conventions), when you learn something durable (decisions, incidents, lessons, preferences), and at session end (session_end)
 ---
 
 # Engram — Cognitive Memory Protocol
@@ -65,7 +65,7 @@ Omit emotion for routine facts. Tag frustration on pain points — it helps surf
 | `encode_batch`  | `memories[]` (1-50)    | each: `type`, `emotion`, `emotionWeight`, `context`    |
 | `reconsolidate` | `id`                   | `newContext`, `currentEmotion`, `currentEmotionWeight` |
 | `forget`        | `id`                   | — (delete a wrong or stale memory)                     |
-| `associate`     | `sourceId`, `targetId` | `type` (link type), `strength` (0-1)                   |
+| `associate`     | `sourceId`, `targetId` | `associationType`, `strength` (0-1)                    |
 
 ### memory_recall
 
