@@ -468,6 +468,131 @@ describe("recall format param", () => {
   });
 });
 
+describe("forget action", () => {
+  test("deletes a memory by ID or prefix", () => {
+    const engine = makeEngine();
+    const encoded = parseResult(
+      handleStore(engine, { action: "encode", content: "wrong fact to remove" }),
+    );
+
+    const result = handleStore(engine, { action: "forget", id: encoded.id });
+    const data = parseResult(result);
+    expect(data.forgotten).toBe(encoded.id);
+    expect(engine.storage.getMemory(encoded.id)).toBeNull();
+
+    engine.close();
+  });
+
+  test("returns error for unknown memory", () => {
+    const engine = makeEngine();
+    const result = handleStore(engine, { action: "forget", id: "nope" });
+    expect(result.isError).toBe(true);
+    engine.close();
+  });
+});
+
+describe("associate action", () => {
+  test("links two memories explicitly", () => {
+    const engine = makeEngine();
+    const a = parseResult(
+      handleStore(engine, { action: "encode", content: "the outage happened friday" }),
+    );
+    const b = parseResult(
+      handleStore(engine, { action: "encode", content: "root cause was dns misconfiguration" }),
+    );
+
+    const result = handleStore(engine, {
+      action: "associate",
+      sourceId: a.id,
+      targetId: b.id,
+      type: "causal",
+    });
+    const data = parseResult(result);
+    expect(data.type).toBe("causal");
+    expect(data.strength).toBe(0.8);
+    expect(engine.storage.getAssociations(a.id).some((x) => x.targetId === b.id)).toBe(true);
+
+    engine.close();
+  });
+
+  test("rejects self-association and unknown ids", () => {
+    const engine = makeEngine();
+    const a = parseResult(handleStore(engine, { action: "encode", content: "solo memory" }));
+
+    expect(
+      handleStore(engine, { action: "associate", sourceId: a.id, targetId: a.id }).isError,
+    ).toBe(true);
+    expect(
+      handleStore(engine, { action: "associate", sourceId: a.id, targetId: "missing" }).isError,
+    ).toBe(true);
+
+    engine.close();
+  });
+});
+
+describe("contexts action", () => {
+  test("lists contexts with counts", () => {
+    const engine = makeEngine();
+    handleStore(engine, { action: "encode", content: "a", context: "project:alpha" });
+    handleStore(engine, { action: "encode", content: "b", context: "project:alpha" });
+    handleStore(engine, { action: "encode", content: "c", context: "project:beta" });
+
+    const result = handleRecall(engine, { action: "contexts" });
+    const data = parseResult(result);
+    expect(data).toEqual([
+      { context: "project:alpha", count: 2 },
+      { context: "project:beta", count: 1 },
+    ]);
+
+    engine.close();
+  });
+});
+
+describe("session lifecycle", () => {
+  test("session_begin returns a briefing and session_end consolidates", () => {
+    const engine = makeEngine();
+    handleStore(engine, {
+      action: "encode",
+      content: "auth service uses jwt tokens",
+      context: "project:webapp",
+    });
+
+    const beginResult = handleManage(engine, {
+      action: "session_begin",
+      context: "project:webapp",
+    });
+    const begin = parseResult(beginResult);
+    expect(begin.sessionId).toBeDefined();
+    expect(begin.context).toBe("project:webapp");
+    expect(begin.briefing.length).toBeGreaterThan(0);
+    expect(begin.counts.semantic).toBe(1);
+
+    handleStore(engine, {
+      action: "encode",
+      content: "added refresh token rotation",
+      context: "project:webapp",
+    });
+
+    const endResult = handleManage(engine, { action: "session_end" });
+    const end = parseResult(endResult);
+    expect(end.sessionId).toBe(begin.sessionId);
+    expect(end.eventsThisSession).toBeGreaterThan(0);
+    expect(end.consolidation.memoriesPruned).toBeDefined();
+    expect(engine.storage.getActiveSession()).toBeNull();
+
+    engine.close();
+  });
+
+  test("session_end without an active session still consolidates", () => {
+    const engine = makeEngine();
+    const result = handleManage(engine, { action: "session_end" });
+    const data = parseResult(result);
+    expect(data.sessionId).toBeNull();
+    expect(data.consolidation).toBeDefined();
+    engine.close();
+  });
+});
+
 describe("context filtering fix", () => {
   test("recall finds context-tagged memories even with unrelated cue", () => {
     const engine = makeEngine();

@@ -6,6 +6,7 @@ import { loadConfig } from "../config/defaults.ts";
 import { EngramStorage } from "../storage/sqlite.ts";
 
 export function detectProjectContext(): string | null {
+  if (process.env.ENGRAM_CONTEXT) return process.env.ENGRAM_CONTEXT;
   try {
     const root = execSync("git rev-parse --show-toplevel", {
       encoding: "utf-8",

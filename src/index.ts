@@ -25,13 +25,16 @@ export { encodeProcedural, getSkills, promoteToSkill } from "./core/procedural-s
 export { discoverChunks, getChunkMembers, type Chunk } from "./core/chunking.ts";
 export {
   baseLevelActivation,
+  baseLevelFromAges,
   spreadingActivationStrength,
   totalActivation,
   activationNoise,
   canRetrieve,
   retrievalLatency,
   computeActivation,
+  computeActivationFromAges,
 } from "./core/activation.ts";
+export { accessAges, encodeAge, type AccessEntry, type ClockNow } from "./core/clock.ts";
 export { ebbinghausRetention, memoryStrength, refreshActivations } from "./core/forgetting.ts";
 export { tokenize, extractKeywords } from "./core/search.ts";
 export { defaultEmotionWeight, isValidEmotion } from "./core/emotional-tag.ts";
@@ -40,6 +43,7 @@ export {
   loadConfig,
   resolveDbPath,
   type CognitiveConfig,
+  type ClockMode,
 } from "./config/defaults.ts";
 export {
   MemoryType,
@@ -58,3 +62,4 @@ export type {
   ConsolidationLog,
   RecallResult,
 } from "./core/memory.ts";
+export type { Session } from "./storage/schema.ts";

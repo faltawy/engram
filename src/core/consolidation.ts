@@ -41,12 +41,19 @@ export function consolidate(
 
   refreshActivations(storage, config, currentTime);
 
+  const activeSession = storage.getActiveSession();
+  const windowStartClock =
+    activeSession?.startClock ?? Math.max(0, storage.getClock() - config.strengthenWindowEvents);
+
   const allMemories = storage.getAllMemories();
   for (const memory of allMemories) {
     if (memory.type === "procedural") continue;
 
-    const timestamps = storage.getAccessTimestamps(memory.id);
-    const recentAccesses = timestamps.filter((t) => currentTime - t < 86400000);
+    const entries = storage.getAccessEntries(memory.id);
+    const recentAccesses =
+      config.clockMode === "agent"
+        ? entries.filter((e) => e.clock > windowStartClock)
+        : entries.filter((e) => currentTime - e.accessedAt < 86400000);
 
     if (recentAccesses.length >= 2) {
       storage.logAccess(memory.id, "consolidate", currentTime);

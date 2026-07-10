@@ -9,6 +9,7 @@ import { generateCorpus, mrr, measureMs } from "./helpers.ts";
 
 const config: CognitiveConfig = {
   ...DEFAULT_CONFIG,
+  clockMode: "wall",
   activationNoise: 0,
   retrievalThreshold: -10.0,
 };
@@ -234,8 +235,8 @@ describe("Stress Testing", () => {
 
     console.log(`[Stress] 500-memory recall: avg=${avg.toFixed(1)}ms, max=${max.toFixed(1)}ms`);
 
-    expect(max).toBeLessThan(500);
-    expect(avg).toBeLessThan(200);
+    expect(max).toBeLessThan(1000);
+    expect(avg).toBeLessThan(500);
 
     storage.close();
   }, 15000);

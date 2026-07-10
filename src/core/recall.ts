@@ -1,10 +1,8 @@
 import type { CognitiveConfig } from "../config/defaults.ts";
 import type { EngramStorage } from "../storage/sqlite.ts";
-import {
-  computeActivation,
-  spreadingActivationStrength,
-} from "./activation.ts";
+import { computeActivationFromAges, spreadingActivationStrength } from "./activation.ts";
 import { getSpreadingActivationTargets } from "./associations.ts";
+import { accessAges } from "./clock.ts";
 import type { Memory, RecallResult } from "./memory.ts";
 import { getWorkingMemoryIds } from "./working-memory.ts";
 
@@ -19,7 +17,7 @@ export function recall(
     context?: string;
     now?: number;
     deterministic?: boolean;
-  }
+  },
 ): RecallResult[] {
   const now = options?.now ?? Date.now();
   const limit = options?.limit ?? 10;
@@ -31,21 +29,21 @@ export function recall(
   for (const id of wmIds) seedIds.add(id);
 
   const ftsIds = storage.searchFTS(cue, limit * 2);
-  for (const id of ftsIds) seedIds.add(id);
+  const cueBoosts = new Map<string, number>();
+  for (const id of ftsIds) {
+    seedIds.add(id);
+    cueBoosts.set(id, config.maxSpreadingActivation);
+  }
 
   if (options?.context) {
-    const contextMatches = storage.getMemoriesByContext(
-      options.context,
-      options?.type,
-      limit * 2
-    );
+    const contextMatches = storage.getMemoriesByContext(options.context, options?.type, limit * 2);
     for (const m of contextMatches) seedIds.add(m.id);
   }
 
   const topByActivation = storage.getTopMemoriesByActivation(
     limit,
     options?.type,
-    options?.context
+    options?.context,
   );
   for (const m of topByActivation) {
     seedIds.add(m.id);
@@ -63,10 +61,7 @@ export function recall(
       for (const t of targets) {
         candidateIds.add(t.memoryId);
         const existing = graphBoosts.get(t.memoryId) ?? 0;
-        graphBoosts.set(
-          t.memoryId,
-          existing + t.activationBoost * primingWeight
-        );
+        graphBoosts.set(t.memoryId, existing + t.activationBoost * primingWeight);
       }
     }
   }
@@ -76,11 +71,7 @@ export function recall(
     const m = storage.getMemory(id);
     if (!m) continue;
     if (options?.type && m.type !== options.type) continue;
-    if (
-      options?.context &&
-      (!m.context || !m.context.startsWith(options.context))
-    )
-      continue;
+    if (options?.context && (!m.context || !m.context.startsWith(options.context))) continue;
     candidateMap.set(m.id, m);
   }
 
@@ -89,7 +80,11 @@ export function recall(
   const results: RecallResult[] = [];
 
   for (const memory of candidateMap.values()) {
-    const timestamps = storage.getAccessTimestamps(memory.id);
+    const ages = accessAges(
+      storage.getAccessEntries(memory.id),
+      { wall: now, clock: storage.getClock() },
+      config.clockMode,
+    );
 
     let spreadingSum = graphBoosts.get(memory.id) ?? 0;
     if (associative && spreadingSum === 0) {
@@ -98,18 +93,15 @@ export function recall(
       const allAssocs = [...assocFrom, ...assocTo];
 
       for (const assoc of allAssocs) {
-        const otherId =
-          assoc.sourceId === memory.id ? assoc.targetId : assoc.sourceId;
+        const otherId = assoc.sourceId === memory.id ? assoc.targetId : assoc.sourceId;
         const fanCount = storage.getFanCount(otherId);
-        const strength = spreadingActivationStrength(
-          config.maxSpreadingActivation,
-          fanCount
-        );
+        const strength = spreadingActivationStrength(config.maxSpreadingActivation, fanCount);
         spreadingSum += assoc.strength * strength;
       }
     }
+    spreadingSum += cueBoosts.get(memory.id) ?? 0;
 
-    const { activation, latency } = computeActivation(timestamps, now, config, {
+    const { activation, latency } = computeActivationFromAges(ages, config, {
       spreadingSum,
       noiseOverride: options?.deterministic ? 0 : undefined,
       emotionWeight: memory.emotionWeight,
@@ -131,8 +123,12 @@ export function recall(
     storage.logAccess(result.memory.id, "recall", now);
     result.memory.recallCount++;
     result.memory.lastRecalledAt = now;
-    const newTimestamps = storage.getAccessTimestamps(result.memory.id);
-    const recomputed = computeActivation(newTimestamps, now, config, {
+    const newAges = accessAges(
+      storage.getAccessEntries(result.memory.id),
+      { wall: now, clock: storage.getClock() },
+      config.clockMode,
+    );
+    const recomputed = computeActivationFromAges(newAges, config, {
       spreadingSum: result.spreadingActivation,
       noiseOverride: 0,
       emotionWeight: result.memory.emotionWeight,

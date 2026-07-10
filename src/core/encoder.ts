@@ -1,7 +1,8 @@
 import type { CognitiveConfig } from "../config/defaults.ts";
 import type { EngramStorage } from "../storage/sqlite.ts";
-import { baseLevelActivation } from "./activation.ts";
+import { baseLevelFromAges } from "./activation.ts";
 import { formEmotionalAssociations, formCausalAssociations } from "./associations.ts";
+import { encodeAge } from "./clock.ts";
 import { defaultEmotionWeight } from "./emotional-tag.ts";
 import type { Memory, EncodeInput } from "./memory.ts";
 import { generateMemoryId } from "./memory.ts";
@@ -19,7 +20,7 @@ export function encode(
 
   const id = generateMemoryId(input.content, input.type);
 
-  const initialActivation = baseLevelActivation([currentTime], currentTime, config.decayRate);
+  const initialActivation = baseLevelFromAges([encodeAge(config.clockMode)], config.decayRate);
 
   const emotionBoost =
     emotionWeight > 0 ? Math.log(1 + emotionWeight * config.emotionalBoostFactor) : 0;

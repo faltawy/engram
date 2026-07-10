@@ -9,11 +9,10 @@ You have a biologically-inspired memory system. Use it like a brain, not a datab
 
 ## Session Lifecycle
 
-**Start:** Recall what you know about the current context.
+**Start:** Open a session. You get a briefing of relevant memories, working-memory contents, and system counts in one call.
 
 ```
-memory_recall → { action: "recall", cue: "<project or topic>" }
-memory_manage → { action: "focus_get" }
+memory_manage → { action: "session_begin", context: "<project or topic>" }
 ```
 
 **During:** Encode insights as they emerge. Don't batch everything at the end.
@@ -22,11 +21,13 @@ memory_manage → { action: "focus_get" }
 memory_store → { action: "encode", content: "...", type: "...", emotion: "..." }
 ```
 
-**End:** Consolidate to strengthen and link memories.
+**End:** Close the session. This consolidates (strengthen, prune, extract, link) and records session boundaries.
 
 ```
-memory_manage → { action: "consolidate" }
+memory_manage → { action: "session_end" }
 ```
+
+Memories decay with **agent activity, not wall-clock time**: an idle month costs nothing, but memories you never touch fade as you do more work. Recalling a memory keeps it alive.
 
 ## Memory Types
 
@@ -58,25 +59,30 @@ Omit emotion for routine facts. Tag frustration on pain points — it helps surf
 
 ### memory_store
 
-| Action          | Required            | Optional                                               |
-| --------------- | ------------------- | ------------------------------------------------------ |
-| `encode`        | `content`           | `type`, `emotion`, `emotionWeight` (0-1), `context`    |
-| `encode_batch`  | `memories[]` (1-50) | each: `type`, `emotion`, `emotionWeight`, `context`    |
-| `reconsolidate` | `id`                | `newContext`, `currentEmotion`, `currentEmotionWeight` |
+| Action          | Required               | Optional                                               |
+| --------------- | ---------------------- | ------------------------------------------------------ |
+| `encode`        | `content`              | `type`, `emotion`, `emotionWeight` (0-1), `context`    |
+| `encode_batch`  | `memories[]` (1-50)    | each: `type`, `emotion`, `emotionWeight`, `context`    |
+| `reconsolidate` | `id`                   | `newContext`, `currentEmotion`, `currentEmotionWeight` |
+| `forget`        | `id`                   | — (delete a wrong or stale memory)                     |
+| `associate`     | `sourceId`, `targetId` | `type` (link type), `strength` (0-1)                   |
 
 ### memory_recall
 
-| Action    | Required | Optional                                                   |
-| --------- | -------- | ---------------------------------------------------------- |
-| `recall`  | `cue`    | `limit`, `type`, `context`, `associative` (bool), `format` |
-| `list`    | —        | `type`, `context`, `limit`, `offset`, `format`             |
-| `inspect` | `id`     | —                                                          |
-| `stats`   | —        | —                                                          |
+| Action     | Required | Optional                                                   |
+| ---------- | -------- | ---------------------------------------------------------- |
+| `recall`   | `cue`    | `limit`, `type`, `context`, `associative` (bool), `format` |
+| `list`     | —        | `type`, `context`, `limit`, `offset`, `format`             |
+| `inspect`  | `id`     | —                                                          |
+| `stats`    | —        | —                                                          |
+| `contexts` | —        | — (list all contexts with memory counts)                   |
 
 ### memory_manage
 
 | Action            | Required  | Optional                   |
 | ----------------- | --------- | -------------------------- |
+| `session_begin`   | —         | `context`                  |
+| `session_end`     | —         | —                          |
 | `consolidate`     | —         | —                          |
 | `focus_push`      | `content` | `memoryRef`                |
 | `focus_pop`       | —         | —                          |
@@ -101,12 +107,14 @@ memory_manage → { action: "recall_to_focus", cue: "<current task>" }
 
 ## Key Behaviors
 
+- **Decay follows agent time** — memories fade per memory-system event, not per second; idle gaps between sessions cost nothing
 - **Recall strengthens memories** — each recall boosts activation (use-it-or-lose-it)
 - **List does NOT strengthen** — use list for browsing without side effects
 - **Procedural memories never decay** — once encoded, they persist permanently
 - **Consolidation discovers associations** — run it to link related memories
 - **Emotional memories resist decay** — tagged memories survive longer
 - **Context scopes memories** — use `context: "project:name"` to partition
+- **Forget deliberately** — delete memories you've verified are wrong instead of leaving them to mislead future recall
 
 ## What to Encode
 
