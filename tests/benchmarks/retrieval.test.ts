@@ -16,6 +16,7 @@ import {
 
 const config: CognitiveConfig = {
   ...DEFAULT_CONFIG,
+  clockMode: "wall",
   activationNoise: 0,
   retrievalThreshold: -10.0,
 };

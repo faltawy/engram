@@ -14,6 +14,7 @@ import { EngramStorage } from "../../src/storage/sqlite.ts";
 
 const config: CognitiveConfig = {
   ...DEFAULT_CONFIG,
+  clockMode: "wall",
   activationNoise: 0,
   retrievalThreshold: -10.0,
   pruningThreshold: -20.0,

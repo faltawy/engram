@@ -1,37 +1,37 @@
 import type { CognitiveConfig } from "../config/defaults.ts";
 
-// B_i = ln(Σ t_j^{-d})
-export function baseLevelActivation(
-  accessTimestamps: number[],
-  now: number,
-  decayRate: number
-): number {
-  if (accessTimestamps.length === 0) return -Infinity;
+// B_i = ln(Σ t_j^{-d}) — ages are elapsed units since each access
+// (seconds in wall mode, agent events in agent mode)
+export function baseLevelFromAges(ages: number[], decayRate: number): number {
+  if (ages.length === 0) return -Infinity;
 
   let sum = 0;
-  for (const ts of accessTimestamps) {
-    const elapsedSeconds = Math.max((now - ts) / 1000, 0.001);
-    sum += Math.pow(elapsedSeconds, -decayRate);
+  for (const age of ages) {
+    sum += Math.pow(Math.max(age, 0.001), -decayRate);
   }
 
   return Math.log(sum);
 }
 
-// S_ji = S - ln(fan_j)
-export function spreadingActivationStrength(
-  maxStrength: number,
-  fanCount: number
+export function baseLevelActivation(
+  accessTimestamps: number[],
+  now: number,
+  decayRate: number,
 ): number {
+  return baseLevelFromAges(
+    accessTimestamps.map((ts) => (now - ts) / 1000),
+    decayRate,
+  );
+}
+
+// S_ji = S - ln(fan_j)
+export function spreadingActivationStrength(maxStrength: number, fanCount: number): number {
   if (fanCount <= 0) return 0;
   return Math.max(0, maxStrength - Math.log(fanCount));
 }
 
 // A_i = B_i + Σ(W_j · S_ji) + ε
-export function totalActivation(
-  baseLevel: number,
-  spreadingSum: number,
-  noise: number
-): number {
+export function totalActivation(baseLevel: number, spreadingSum: number, noise: number): number {
   return baseLevel + spreadingSum + noise;
 }
 
@@ -51,9 +51,47 @@ export function canRetrieve(activation: number, threshold: number): boolean {
 export function retrievalLatency(
   activation: number,
   latencyFactor: number,
-  latencyExponent: number
+  latencyExponent: number,
 ): number {
   return latencyFactor * Math.exp(-latencyExponent * activation);
+}
+
+export interface ActivationBreakdown {
+  activation: number;
+  baseLevel: number;
+  spreading: number;
+  noise: number;
+  latency: number;
+}
+
+export function computeActivationFromAges(
+  ages: number[],
+  config: CognitiveConfig,
+  options?: {
+    spreadingSum?: number;
+    noiseOverride?: number;
+    emotionWeight?: number;
+  },
+): ActivationBreakdown {
+  const baseLevel = baseLevelFromAges(ages, config.decayRate);
+
+  const emotionBoost = options?.emotionWeight
+    ? Math.log(1 + options.emotionWeight * config.emotionalBoostFactor)
+    : 0;
+
+  const spreading = options?.spreadingSum ?? 0;
+  const noise = options?.noiseOverride ?? activationNoise(config.activationNoise);
+
+  const activation = totalActivation(baseLevel + emotionBoost, spreading, noise);
+  const latency = retrievalLatency(activation, config.latencyFactor, config.latencyExponent);
+
+  return {
+    activation,
+    baseLevel: baseLevel + emotionBoost,
+    spreading,
+    noise,
+    latency,
+  };
 }
 
 export function computeActivation(
@@ -64,44 +102,11 @@ export function computeActivation(
     spreadingSum?: number;
     noiseOverride?: number;
     emotionWeight?: number;
-  }
-): {
-  activation: number;
-  baseLevel: number;
-  spreading: number;
-  noise: number;
-  latency: number;
-} {
-  const baseLevel = baseLevelActivation(
-    accessTimestamps,
-    now,
-    config.decayRate
+  },
+): ActivationBreakdown {
+  return computeActivationFromAges(
+    accessTimestamps.map((ts) => (now - ts) / 1000),
+    config,
+    options,
   );
-
-  const emotionBoost = options?.emotionWeight
-    ? Math.log(1 + options.emotionWeight * config.emotionalBoostFactor)
-    : 0;
-
-  const spreading = options?.spreadingSum ?? 0;
-  const noise =
-    options?.noiseOverride ?? activationNoise(config.activationNoise);
-
-  const activation = totalActivation(
-    baseLevel + emotionBoost,
-    spreading,
-    noise
-  );
-  const latency = retrievalLatency(
-    activation,
-    config.latencyFactor,
-    config.latencyExponent
-  );
-
-  return {
-    activation,
-    baseLevel: baseLevel + emotionBoost,
-    spreading,
-    noise,
-    latency,
-  };
 }

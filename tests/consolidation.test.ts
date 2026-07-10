@@ -10,7 +10,7 @@ import { encodeProcedural, getSkills } from "../src/core/procedural-store.ts";
 import { recall } from "../src/core/recall.ts";
 import { EngramStorage } from "../src/storage/sqlite.ts";
 
-const config: CognitiveConfig = { ...DEFAULT_CONFIG, activationNoise: 0 };
+const config: CognitiveConfig = { ...DEFAULT_CONFIG, clockMode: "wall", activationNoise: 0 };
 
 function makeStorage() {
   return EngramStorage.inMemory();

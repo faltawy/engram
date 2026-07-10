@@ -1,12 +1,10 @@
 import type { CognitiveConfig } from "../config/defaults.ts";
 import type { EngramStorage } from "../storage/sqlite.ts";
-import { baseLevelActivation } from "./activation.ts";
+import { baseLevelFromAges } from "./activation.ts";
+import { accessAges } from "./clock.ts";
 
 // R(t) = e^{-t/S}
-export function ebbinghausRetention(
-  timeSinceLastRecall: number,
-  strength: number
-): number {
+export function ebbinghausRetention(timeSinceLastRecall: number, strength: number): number {
   if (strength <= 0) return 0;
   return Math.exp(-timeSinceLastRecall / strength);
 }
@@ -15,7 +13,7 @@ export function memoryStrength(
   recallCount: number,
   emotionWeight: number,
   associationCount: number,
-  emotionalBoostFactor: number
+  emotionalBoostFactor: number,
 ): number {
   const recallStrength = 1 + recallCount * 0.8;
   const emotionalStrength = 1 + emotionWeight * emotionalBoostFactor;
@@ -26,7 +24,7 @@ export function memoryStrength(
 export function refreshActivations(
   storage: EngramStorage,
   config: CognitiveConfig,
-  now?: number
+  now?: number,
 ): { updated: number; atRisk: number } {
   const currentTime = now ?? Date.now();
   const memories = storage.getAllMemories();
@@ -36,12 +34,12 @@ export function refreshActivations(
   for (const memory of memories) {
     if (memory.type === "procedural") continue;
 
-    const timestamps = storage.getAccessTimestamps(memory.id);
-    const newActivation = baseLevelActivation(
-      timestamps,
-      currentTime,
-      config.decayRate
+    const ages = accessAges(
+      storage.getAccessEntries(memory.id),
+      { wall: currentTime, clock: storage.getClock() },
+      config.clockMode,
     );
+    const newActivation = baseLevelFromAges(ages, config.decayRate);
 
     const emotionBoost =
       memory.emotionWeight > 0

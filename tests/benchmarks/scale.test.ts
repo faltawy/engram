@@ -9,6 +9,7 @@ import { generateCorpus, mrr, measureMs } from "./helpers.ts";
 
 const config: CognitiveConfig = {
   ...DEFAULT_CONFIG,
+  clockMode: "wall",
   activationNoise: 0,
   retrievalThreshold: -10.0,
 };
