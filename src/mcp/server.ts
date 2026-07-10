@@ -4,7 +4,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod/v4";
 
 import { EngramEngine } from "../core/engine.ts";
-import { MemoryType, Emotion } from "../core/memory.ts";
+import { MemoryType, Emotion, AssociationType } from "../core/memory.ts";
 import { handleStore, handleRecall, handleManage } from "./tools.ts";
 
 const engine = EngramEngine.create();
@@ -18,26 +18,15 @@ server.registerTool(
   "memory_store",
   {
     title: "Store Memory",
-    description: `Actions: encode(content) — store memory | encode_batch(memories[]) — store multiple | reconsolidate(id) — update during recall. Optional: type, emotion, emotionWeight, context.`,
+    description: `Actions: encode(content) — store memory | encode_batch(memories[]) — store multiple | reconsolidate(id) — update during recall | forget(id) — delete a wrong/stale memory | associate(sourceId, targetId) — explicitly link two memories. Optional: type, emotion, emotionWeight, context.`,
     inputSchema: z.discriminatedUnion("action", [
       z.object({
         action: z.literal("encode"),
         content: z.string().describe("Memory content"),
-        type: z
-          .nativeEnum(MemoryType)
-          .optional()
-          .describe("Memory type (default: semantic)"),
+        type: z.nativeEnum(MemoryType).optional().describe("Memory type (default: semantic)"),
         emotion: z.nativeEnum(Emotion).optional().describe("Emotional tag"),
-        emotionWeight: z
-          .number()
-          .min(0)
-          .max(1)
-          .optional()
-          .describe("Emotion intensity 0-1"),
-        context: z
-          .string()
-          .optional()
-          .describe("Context tag (e.g. project:acme)"),
+        emotionWeight: z.number().min(0).max(1).optional().describe("Emotion intensity 0-1"),
+        context: z.string().optional().describe("Context tag (e.g. project:acme)"),
       }),
       z.object({
         action: z.literal("encode_batch"),
@@ -49,7 +38,7 @@ server.registerTool(
               emotion: z.nativeEnum(Emotion).optional(),
               emotionWeight: z.number().min(0).max(1).optional(),
               context: z.string().optional(),
-            })
+            }),
           )
           .min(1)
           .max(50)
@@ -59,27 +48,30 @@ server.registerTool(
         action: z.literal("reconsolidate"),
         id: z.string().describe("Memory ID to update"),
         newContext: z.string().optional().describe("New context to blend"),
-        currentEmotion: z
-          .nativeEnum(Emotion)
-          .optional()
-          .describe("Current emotional state"),
-        currentEmotionWeight: z
-          .number()
-          .min(0)
-          .max(1)
-          .optional()
-          .describe("Emotion intensity"),
+        currentEmotion: z.nativeEnum(Emotion).optional().describe("Current emotional state"),
+        currentEmotionWeight: z.number().min(0).max(1).optional().describe("Emotion intensity"),
+      }),
+      z.object({
+        action: z.literal("forget"),
+        id: z.string().describe("Memory ID or prefix to delete permanently"),
+      }),
+      z.object({
+        action: z.literal("associate"),
+        sourceId: z.string().describe("Source memory ID or prefix"),
+        targetId: z.string().describe("Target memory ID or prefix"),
+        type: z.nativeEnum(AssociationType).optional().describe("Link type (default: semantic)"),
+        strength: z.number().min(0).max(1).optional().describe("Link strength 0-1 (default: 0.8)"),
       }),
     ]),
   },
-  async (args) => handleStore(engine, args)
+  async (args) => handleStore(engine, args),
 );
 
 server.registerTool(
   "memory_recall",
   {
     title: "Recall Memories",
-    description: `Actions: recall(cue) — cue-based retrieval | list — browse without activation effects | inspect(id) — full lifecycle | stats — system overview. Optional: limit, type, context, format, verbose.`,
+    description: `Actions: recall(cue) — cue-based retrieval | list — browse without activation effects | inspect(id) — full lifecycle | stats — system overview | contexts — list all contexts with counts. Optional: limit, type, context, format, verbose.`,
     inputSchema: z.discriminatedUnion("action", [
       z.object({
         action: z.literal("recall"),
@@ -87,10 +79,7 @@ server.registerTool(
         limit: z.number().optional().describe("Max results (default: 5)"),
         type: z.nativeEnum(MemoryType).optional().describe("Filter by type"),
         context: z.string().optional().describe("Filter by context"),
-        associative: z
-          .boolean()
-          .optional()
-          .describe("Spreading activation (default: true)"),
+        associative: z.boolean().optional().describe("Spreading activation (default: true)"),
         verbose: z.boolean().optional().describe("Full fields"),
         format: z
           .enum(["full", "content", "ids"])
@@ -106,10 +95,7 @@ server.registerTool(
         type: z.nativeEnum(MemoryType).optional().describe("Filter by type"),
         context: z.string().optional().describe("Filter by context prefix"),
         limit: z.number().optional().describe("Max results (default: 20)"),
-        offset: z
-          .number()
-          .optional()
-          .describe("Skip first N results (default: 0)"),
+        offset: z.number().optional().describe("Skip first N results (default: 0)"),
         format: z
           .enum(["full", "content", "ids"])
           .optional()
@@ -118,27 +104,34 @@ server.registerTool(
       z.object({
         action: z.literal("stats"),
       }),
+      z.object({
+        action: z.literal("contexts"),
+      }),
     ]),
   },
-  async (args) => handleRecall(engine, args)
+  async (args) => handleRecall(engine, args),
 );
 
 server.registerTool(
   "memory_manage",
   {
     title: "Manage Memory",
-    description: `Actions: consolidate — run sleep cycle | recall_to_focus(cue) — recall and load to working memory | focus_push(content) — push to buffer | focus_pop — pop newest | focus_get — view buffer | focus_clear — empty buffer.`,
+    description: `Actions: session_begin — start a session, get a briefing of relevant memories (call at session start) | session_end — consolidate and close the session (call before finishing) | consolidate — run sleep cycle | recall_to_focus(cue) — recall and load to working memory | focus_push(content) — push to buffer | focus_pop — pop newest | focus_get — view buffer | focus_clear — empty buffer.`,
     inputSchema: z.discriminatedUnion("action", [
+      z.object({
+        action: z.literal("session_begin"),
+        context: z.string().optional().describe("Session context (default: auto-detected project)"),
+      }),
+      z.object({
+        action: z.literal("session_end"),
+      }),
       z.object({
         action: z.literal("consolidate"),
       }),
       z.object({
         action: z.literal("focus_push"),
         content: z.string().describe("Content to hold in focus"),
-        memoryRef: z
-          .string()
-          .optional()
-          .describe("Reference to existing memory ID"),
+        memoryRef: z.string().optional().describe("Reference to existing memory ID"),
       }),
       z.object({
         action: z.literal("focus_pop"),
@@ -152,16 +145,13 @@ server.registerTool(
       z.object({
         action: z.literal("recall_to_focus"),
         cue: z.string().describe("Recall cue"),
-        limit: z
-          .number()
-          .optional()
-          .describe("Max memories to load (default: 3)"),
+        limit: z.number().optional().describe("Max memories to load (default: 3)"),
         type: z.nativeEnum(MemoryType).optional().describe("Filter by type"),
         context: z.string().optional().describe("Filter by context"),
       }),
     ]),
   },
-  async (args) => handleManage(engine, args)
+  async (args) => handleManage(engine, args),
 );
 
 async function main() {
